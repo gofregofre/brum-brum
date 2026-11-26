@@ -93,6 +93,16 @@ main.wrap{padding-top:12px;padding-bottom:calc(140px + var(--safe-b))}
 .drv[aria-checked="true"]{color:var(--accent);border-color:var(--accent);background:var(--accent-soft)}
 .drv svg.i{width:18px;height:18px}
 
+.leg.is-extra{border-top-style:dashed}
+.leg-h .meta{flex:1}
+.leg-h .nw{white-space:nowrap}
+.leg-h.has-act{align-items:center;padding-bottom:4px}
+.carbtn{flex:none;height:44px;min-width:44px;padding:0 8px;margin:-6px -2px -6px 0;border-radius:var(--r-sm);display:inline-flex;align-items:center;justify-content:center;gap:4px;
+  font-size:13px;font-weight:500;color:var(--muted);white-space:nowrap}
+.carbtn:active{background:var(--line)}
+.carbtn svg.i{width:16px;height:16px}
+.leg-warn{font-size:12px;font-weight:600;color:var(--text);padding:0 2px 8px}
+.toast button{color:#fff;font-weight:600;text-decoration:underline;min-height:44px;padding:0 6px;margin:-12px -6px -12px 8px}
 .weekend-toggle{width:100%;min-height:48px;border:1px dashed var(--line-strong);border-radius:var(--r);color:var(--muted);font-size:14px;display:flex;align-items:center;justify-content:center;gap:8px}
 .weekend-toggle:active{background:var(--line)}
 
@@ -158,7 +168,8 @@ main.wrap{padding-top:12px;padding-bottom:calc(140px + var(--safe-b))}
 
 /* ---------- Toast ---------- */
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(132px + var(--safe-b));z-index:50;background:var(--text);color:#fff;font-size:14px;
-  padding:10px 14px;border-radius:var(--r-sm);max-width:calc(100% - 32px);text-align:center}
+  padding:10px 14px;border-radius:var(--r-sm);max-width:calc(100% - 32px);text-align:center;display:flex;align-items:center;justify-content:center}
+.toast[hidden]{display:none}
 
 /* ---------- Desktop ---------- */
 @media (min-width:760px){
@@ -387,10 +398,63 @@ main.wrap{padding-top:12px;padding-bottom:calc(140px + var(--safe-b))}
     return DAYS_CA[isoDow(t) - 1] + ' ' + new Date(t).getUTCDate();
   }
 
-  function tripKey(dateStr, direction) {
+  /**
+   * Several cars can run on the same day and direction. Car 1 keeps the legacy key
+   * "YYYY-MM-DD_anada" (existing rows stay valid); car n (2..MAX_CARS) is "YYYY-MM-DD_anada_n".
+   * The DB stores trip_key as free text (only UNIQUE), so no migration is needed.
+   */
+  var MAX_CARS = MEMBERS.length; // every car needs its own driver
+  function validCar(car) {
+    if (car === undefined) return 1;
+    if (!Number.isInteger(car) || car < 1 || car > MAX_CARS) throw new Error('INVALID_CAR: ' + car);
+    return car;
+  }
+  function tripKey(dateStr, direction, car) {
     parseDate(dateStr);
     if (DIRECTIONS.indexOf(direction) < 0) throw new Error('INVALID_DIRECTION: ' + direction);
-    return dateStr + '_' + direction;
+    var c = validCar(car);
+    return dateStr + '_' + direction + (c === 1 ? '' : '_' + c);
+  }
+  var KEY_RE = /^(\d{4}-\d{2}-\d{2})_(anada|tornada)(?:_([2-9]))?$/;
+  /** Inverse of tripKey; null for anything tripKey would not produce. */
+  function parseTripKey(key) {
+    var m = typeof key === 'string' && KEY_RE.exec(key);
+    if (!m) return null;
+    var car = m[3] ? +m[3] : 1;
+    if (car > MAX_CARS) return null;
+    try { parseDate(m[1]); } catch (e) { return null; }
+    return { date: m[1], direction: m[2], car: car };
+  }
+  /** All cars of one leg (date + direction), car 1 first: [{car, trip}] with normalized trips. */
+  function legTrips(trips, dateStr, direction) {
+    var out = [];
+    (Array.isArray(trips) ? trips : []).forEach(function (t) {
+      var k = t && parseTripKey(t.trip_key);
+      if (k && k.date === dateStr && k.direction === direction) out.push({ car: k.car, trip: normalizeTrip(t) });
+    });
+    return out.sort(function (a, b) { return a.car - b.car; });
+  }
+  /**
+   * A person cannot sit in two cars of the same leg. The app prevents it (moving them on tap),
+   * but two phones editing at once can still produce it; this lists such cases for a warning.
+   */
+  function legConflicts(trips) {
+    var seen = {}, order = [];
+    (Array.isArray(trips) ? trips : []).forEach(function (t) {
+      var k = t && parseTripKey(t.trip_key);
+      if (!k) return;
+      normalizeTrip(t).passengers.forEach(function (m) {
+        var id = k.date + '|' + k.direction + '|' + m;
+        if (!seen[id]) { seen[id] = { date: k.date, direction: k.direction, member: m, cars: [] }; order.push(id); }
+        if (seen[id].cars.indexOf(k.car) < 0) seen[id].cars.push(k.car);
+      });
+    });
+    return order.map(function (id) { return seen[id]; }).filter(function (c) { return c.cars.length > 1; })
+      .map(function (c) { c.cars.sort(function (a, b) { return a - b; }); return c; })
+      .sort(function (a, b) {
+        return a.date < b.date ? -1 : a.date > b.date ? 1
+          : (DIRECTIONS.indexOf(a.direction) - DIRECTIONS.indexOf(b.direction)) || (MEMBERS.indexOf(a.member) - MEMBERS.indexOf(b.member));
+      });
   }
 
   /* ------------------------------------------------------------ formatting */
@@ -579,21 +643,25 @@ main.wrap{padding-top:12px;padding-bottom:calc(140px + var(--safe-b))}
     var byDate = {};
     wk.forEach(function (t) {
       if (!t.passengers.length) return;
-      (byDate[t.trip_date] = byDate[t.trip_date] || {})[t.direction] = t;
+      var k = parseTripKey(t.trip_key), car = k ? k.car : MAX_CARS + 1;
+      var day = (byDate[t.trip_date] = byDate[t.trip_date] || {});
+      (day[t.direction] = day[t.direction] || []).push({ car: car, key: String(t.trip_key), t: t });
     });
     var dates = Object.keys(byDate).sort();
     if (!dates.length) lines.push('Cap trajecte aquesta setmana.');
     dates.forEach(function (d) {
       var parts = [];
       DIRECTIONS.forEach(function (dir) {
-        var t = byDate[d][dir];
-        if (!t) return;
+        var cars = byDate[d][dir];
+        if (!cars) return;
         var name = dir === 'anada' ? 'Anada' : 'Tornada';
-        var others = t.passengers.filter(function (m) { return m !== t.driver; });
-        var who = t.driver
-          ? t.driver + (others.length ? ' (' + others.join(', ') + ')' : ' sol')
-          : 'sense conductor (' + t.passengers.join(', ') + ')';
-        parts.push(name + ': ' + who);
+        cars.sort(function (a, b) { return (a.car - b.car) || (a.key < b.key ? -1 : a.key > b.key ? 1 : 0); });
+        parts.push(name + ': ' + cars.map(function (c) {
+          var t = c.t, others = t.passengers.filter(function (m) { return m !== t.driver; });
+          return t.driver
+            ? t.driver + (others.length ? ' (' + others.join(', ') + ')' : ' sol')
+            : 'sense conductor (' + t.passengers.join(', ') + ')';
+        }).join(' + '));
       });
       lines.push(dayLabel(d) + ' · ' + parts.join(' · '));
     });
@@ -795,8 +863,8 @@ main.wrap{padding-top:12px;padding-bottom:calc(140px + var(--safe-b))}
       throw err;
     });
   };
-  SP.getTrip = function (dateStr, direction) {
-    var key = tripKey(dateStr, direction);
+  SP.getTrip = function (dateStr, direction, car) {
+    var key = tripKey(dateStr, direction, car);
     for (var k = 0; k < this.state.trips.length; k++) if (this.state.trips[k].trip_key === key) return this.state.trips[k];
     return { trip_key: key, week_id: isoWeekId(dateStr), trip_date: dateStr, direction: direction,
       driver: null, passengers: [], price_cents: this.state.default_price_cents };
@@ -808,15 +876,70 @@ main.wrap{padding-top:12px;padding-bottom:calc(140px + var(--safe-b))}
     this._persist();
     return t;
   };
-  SP.updateTrip = function (dateStr, direction, mutate) {
-    var t = this._putLocal(mutate(this.getTrip(dateStr, direction)));
+  SP.updateTrip = function (dateStr, direction, mutate, car) {
+    var t = this._putLocal(mutate(this.getTrip(dateStr, direction, car)));
     var q = this._q[t.trip_key] || (this._q[t.trip_key] = { pending: null, inflight: null, running: false, failed: false });
     q.pending = t; q.failed = false;
     this._setStatus(); this._emit();
     return this._drain(t.trip_key);
   };
-  SP.togglePassenger = function (d, dir, m) { return this.updateTrip(d, dir, function (t) { return togglePassenger(t, m); }); };
-  SP.setDriver = function (d, dir, m) { return this.updateTrip(d, dir, function (t) { return setDriver(t, m); }); };
+  /**
+   * Rule "one car per person per leg": when member m ends up in car `car`, they are taken out of
+   * every other car of the same date + direction (and lose the driver seat there). Each touched
+   * car is its own trip_key, so each write goes through its own serialized queue.
+   */
+  SP._exclusive = function (d, dir, car, m, p) {
+    var self = this, c = validCar(car);
+    if (self.getTrip(d, dir, c).passengers.indexOf(m) < 0) return p;
+    var jobs = [p];
+    legTrips(self.state.trips, d, dir).forEach(function (x) {
+      if (x.car === c || x.trip.passengers.indexOf(m) < 0) return;
+      jobs.push(self.updateTrip(d, dir, function (t) { return togglePassenger(t, m); }, x.car));
+    });
+    return jobs.length === 1 ? p : Promise.all(jobs).then(function () {});
+  };
+  SP.togglePassenger = function (d, dir, m, car) {
+    return this._exclusive(d, dir, car, m, this.updateTrip(d, dir, function (t) { return togglePassenger(t, m); }, car));
+  };
+  SP.setDriver = function (d, dir, m, car) {
+    return this._exclusive(d, dir, car, m, this.updateTrip(d, dir, function (t) { return setDriver(t, m); }, car));
+  };
+  /** Cars to show for a leg: car 1 always, extra cars only while they have someone in them. */
+  SP.legCars = function (d, dir) {
+    var self = this, extra = legTrips(this.state.trips, d, dir).filter(function (x) { return x.car > 1 && x.trip.passengers.length; });
+    return [{ car: 1, trip: self.getTrip(d, dir, 1) }].concat(extra);
+  };
+  /** Lowest free car number (>= 2) for a leg, given cars already open on screen; null if full. */
+  SP.nextCar = function (d, dir, openCars) {
+    var used = {};
+    this.legCars(d, dir).forEach(function (x) { used[x.car] = true; });
+    (openCars || []).forEach(function (c) { used[c] = true; });
+    for (var c = 2; c <= MAX_CARS; c++) if (!used[c]) return c;
+    return null;
+  };
+  /**
+   * "Remove" car n >= 2: there is no delete RPC, so the row is emptied (no driver, nobody,
+   * 0 € effect) and hidden. Returns (as a promise) the previous trip so the UI can undo.
+   */
+  SP.removeCar = function (d, dir, car) {
+    if (validCar(car) === 1) throw new Error('INVALID_CAR: car 1 cannot be removed');
+    var prev = normalizeTrip(this.getTrip(d, dir, car));
+    return this.updateTrip(d, dir, function (t) { var o = normalizeTrip(t); o.driver = null; o.passengers = []; return o; }, car)
+      .then(function () { return prev; });
+  };
+  /** Undo of removeCar: puts the people (and the car's own price) back, keeping the one-car rule. */
+  SP.restoreCar = function (prev) {
+    var self = this, k = prev && parseTripKey(prev.trip_key);
+    if (!k) return Promise.reject(new Error('INVALID_TRIP'));
+    var p = normalizeTrip(prev);
+    var jobs = [self.updateTrip(k.date, k.direction, function (t) {
+      var o = normalizeTrip(t); o.driver = p.driver; o.passengers = p.passengers;
+      if (validPrice(p.price_cents)) o.price_cents = p.price_cents;
+      return o;
+    }, k.car)];
+    p.passengers.forEach(function (m) { jobs.push(self._exclusive(k.date, k.direction, k.car, m, Promise.resolve())); });
+    return Promise.all(jobs).then(function () {});
+  };
   SP._drain = function (key) {
     var self = this, q = this._q[key];
     if (q.running) return q.promise;
@@ -890,6 +1013,7 @@ main.wrap{padding-top:12px;padding-bottom:calc(140px + var(--safe-b))}
     PIN_KEY: PIN_KEY, CACHE_KEY: CACHE_KEY,
     isoWeekId: isoWeekId, weekDates: weekDates, shiftWeek: shiftWeek, currentWeekId: currentWeekId,
     todayLocal: todayLocal, weekRangeLabel: weekRangeLabel, dayLabel: dayLabel, tripKey: tripKey,
+    MAX_CARS: MAX_CARS, parseTripKey: parseTripKey, legTrips: legTrips, legConflicts: legConflicts,
     formatCents: formatCents, normalizeTrip: normalizeTrip, togglePassenger: togglePassenger, setDriver: setDriver,
     computeBalances: computeBalances, weekBalances: weekBalances, pendingBalances: pendingBalances,
     pendingWeekIds: pendingWeekIds, isWeekSettled: isWeekSettled, tripsOfWeek: tripsOfWeek,
@@ -928,7 +1052,7 @@ main.wrap{padding-top:12px;padding-bottom:calc(140px + var(--safe-b))}
   var client = E.SupabaseClient({ url: SUPABASE_URL, key: SUPABASE_PUBLIC_KEY, fetch: window.__carpoolFetch });
   var store = E.CarpoolStore({ client: client, storage: storage, onChange: function () { schedule(); } });
 
-  var ui = { weekId: E.currentWeekId(), tab: 'week', weekendOpen: {}, refreshing: false, weekBusy: false, wasLoggedIn: store.hasPin() };
+  var ui = { weekId: E.currentWeekId(), tab: 'week', weekendOpen: {}, refreshing: false, weekBusy: false, wasLoggedIn: store.hasPin(), openCars: {} };
   try { ui.weekendOpen = JSON.parse(lsGet(LS_WEEKEND) || '{}') || {}; } catch (e) { ui.weekendOpen = {}; }
 
   function trips() { return store.state.trips; }
@@ -960,8 +1084,25 @@ main.wrap{padding-top:12px;padding-bottom:calc(140px + var(--safe-b))}
     var each = Math.round(price / n);
     return n + ' ocupants · ' + (price % n ? '≈' : '') + eur(each) + '/p';
   }
-  function legHTML(ymd, dir) {
-    var t = store.getTrip(ymd, dir), label = dir === 'anada' ? 'Anada' : 'Tornada';
+  // Several cars can run per leg (date + direction). Car 1 always shows; extra cars show while
+  // they have people, or while opened on this screen (ui.openCars, memory only).
+  function legId(ymd, dir) { return ymd + '_' + dir; }
+  function visibleCars(ymd, dir) {
+    var cars = store.legCars(ymd, dir).map(function (x) { return x.car; });
+    (ui.openCars[legId(ymd, dir)] || []).forEach(function (c) { if (cars.indexOf(c) === -1) cars.push(c); });
+    return cars.sort(function (a, b) { return a - b; });
+  }
+  function legBlockHTML(ymd, dir) {
+    var cars = visibleCars(ymd, dir), multi = cars.length > 1;
+    var conflicts = E.legConflicts(cars.map(function (c) { return store.getTrip(ymd, dir, c); }));
+    var next = store.nextCar(ymd, dir, cars);
+    return cars.map(function (car, i) {
+      return legHTML(ymd, dir, car, multi ? i + 1 : 0, i === 0 && next !== null, i === 0 ? conflicts : []);
+    }).join('');
+  }
+  function legHTML(ymd, dir, car, pos, canAdd, conflicts) {
+    var t = store.getTrip(ymd, dir, car), base = dir === 'anada' ? 'Anada' : 'Tornada';
+    var label = pos ? base + ' · cotxe ' + pos : base;
     var pills = M.map(function (m) {
       var on = t.passengers.indexOf(m) !== -1, drv = t.driver === m;
       return '<button type="button" class="pill' + (drv ? ' is-driver' : '') + '" data-act="pax" data-m="' + m + '" aria-pressed="' + on + '"'
@@ -971,15 +1112,20 @@ main.wrap{padding-top:12px;padding-bottom:calc(140px + var(--safe-b))}
       return '<button type="button" class="drv" role="radio" data-act="drv" data-m="' + m + '" aria-checked="' + (t.driver === m) + '" aria-label="Condueix ' + m + '">'
         + svg('i-wheel') + '<span>' + m + '</span></button>';
     }).join('');
-    return '<div class="leg" data-date="' + ymd + '" data-dir="' + dir + '">'
-      + '<div class="leg-h"><span class="dir">' + label + '</span><span class="meta num">' + esc(legMeta(t)) + '</span></div>'
+    var act = car > 1
+      ? '<button type="button" class="carbtn" data-act="delcar" aria-label="Treure ' + label + '">' + svg('i-close') + 'Treure</button>'
+      : canAdd ? '<button type="button" class="carbtn" data-act="addcar" aria-label="Afegir un altre cotxe a ' + base + '">' + svg('i-plus') + 'Cotxe</button>' : '';
+    var warn = conflicts.length ? '<div class="leg-warn" role="alert">Atenció: ' + conflicts.map(function (c) { return c.member; }).join(', ')
+      + (conflicts.length === 1 ? ' surt' : ' surten') + ' a dos cotxes. Toca\u2019l al cotxe on va.</div>' : '';
+    return '<div class="leg' + (car > 1 ? ' is-extra' : '') + '" data-date="' + ymd + '" data-dir="' + dir + '" data-car="' + car + '">'
+      + '<div class="leg-h' + (act ? ' has-act' : '') + '"><span class="dir">' + label + '</span><span class="meta num">' + legMeta(t).split(' · ').map(function (x) { return '<span class="nw">' + esc(x) + '</span>'; }).join(' · ') + '</span>' + act + '</div>' + warn
       + '<div class="grid5" role="group" aria-label="Ocupants ' + label + '">' + pills + '</div>'
       + '<div class="drv-cap">Qui condueix</div>'
       + '<div class="grid5" role="radiogroup" aria-label="Conductor ' + label + '">' + drivers + '</div>'
       + '</div>';
   }
   function hasTrips(ymd) {
-    return E.DIRECTIONS.some(function (d) { return store.getTrip(ymd, d).passengers.length > 0; });
+    return E.DIRECTIONS.some(function (d) { return store.legCars(ymd, d).some(function (x) { return x.trip.passengers.length > 0; }); });
   }
   function renderDays() {
     var dates = E.weekDates(ui.weekId), today = E.todayLocal();
@@ -992,7 +1138,7 @@ main.wrap{padding-top:12px;padding-bottom:calc(140px + var(--safe-b))}
       html += '<section class="day' + (isToday ? ' is-today' : '') + '" id="d-' + ymd + '">'
         + '<div class="day-h"><b>' + DAY_LONG[i] + '</b><time datetime="' + ymd + '">' + dayMonth(ymd) + '</time>'
         + (isToday ? '<span class="today">Avui</span>' : '') + '</div>'
-        + legHTML(ymd, 'anada') + legHTML(ymd, 'tornada') + '</section>';
+        + legBlockHTML(ymd, 'anada') + legBlockHTML(ymd, 'tornada') + '</section>';
     });
     $('days').innerHTML = html;
     var wb = $('weekendBtn');
@@ -1066,9 +1212,14 @@ main.wrap{padding-top:12px;padding-bottom:calc(140px + var(--safe-b))}
   }
 
   var toastTimer = null;
-  function toast(msg) {
+  function toast(msg, actLabel, onAct) {
     var t = $('toast'); t.textContent = msg; t.hidden = false;
-    clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.hidden = true; }, 2200);
+    if (actLabel) {
+      var b = document.createElement('button'); b.type = 'button'; b.textContent = actLabel;
+      b.addEventListener('click', function () { t.hidden = true; clearTimeout(toastTimer); onAct(); });
+      t.appendChild(b);
+    }
+    clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.hidden = true; }, actLabel ? 6000 : 2200);
   }
 
   // ---------------- Network ----------------
@@ -1164,10 +1315,31 @@ main.wrap{padding-top:12px;padding-bottom:calc(140px + var(--safe-b))}
   });
   $('days').addEventListener('click', function (e) {
     var b = e.target.closest('button[data-act]'); if (!b) return;
-    var leg = b.closest('.leg'), m = b.dataset.m;
-    if (!leg || M.indexOf(m) === -1) return;
-    quiet(b.dataset.act === 'pax' ? store.togglePassenger(leg.dataset.date, leg.dataset.dir, m)
-      : store.setDriver(leg.dataset.date, leg.dataset.dir, m));
+    var leg = b.closest('.leg'), m = b.dataset.m, act = b.dataset.act;
+    if (!leg) return;
+    var d = leg.dataset.date, dir = leg.dataset.dir, car = parseInt(leg.dataset.car, 10) || 1, id = legId(d, dir);
+    if (act === 'addcar') {
+      var next = store.nextCar(d, dir, visibleCars(d, dir));
+      if (next === null) return;
+      (ui.openCars[id] = ui.openCars[id] || []).push(next);
+      onStoreChange();
+      var el = document.querySelector('.leg[data-date="' + d + '"][data-dir="' + dir + '"][data-car="' + next + '"]');
+      if (el && el.scrollIntoView) el.scrollIntoView({ block: 'nearest' });
+      return;
+    }
+    if (act === 'delcar') {
+      if (car < 2) return;
+      ui.openCars[id] = (ui.openCars[id] || []).filter(function (c) { return c !== car; });
+      if (store.getTrip(d, dir, car).passengers.length) {
+        var prev = E.normalizeTrip(store.getTrip(d, dir, car)); // captured now: undo must work offline too
+        quiet(store.removeCar(d, dir, car));
+        toast('Cotxe tret', 'Desfer', function () { quiet(store.restoreCar(prev)); onStoreChange(); });
+      }
+      onStoreChange();
+      return;
+    }
+    if (M.indexOf(m) === -1) return;
+    quiet(act === 'pax' ? store.togglePassenger(d, dir, m, car) : store.setDriver(d, dir, m, car));
     onStoreChange(); // paint synchronously: feedback must land on the same frame as the tap
   });
   function goWeek(w) { ui.weekId = w; render(); window.scrollTo(0, 0); }
