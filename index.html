@@ -1,0 +1,1227 @@
+<!doctype html>
+<html lang="ca">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Cotxe Uni">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#F7F7F5">
+<meta name="color-scheme" content="light">
+<meta name="format-detection" content="telephone=no">
+<title>Cotxe Uni</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23111113'/%3E%3Ccircle cx='32' cy='32' r='17' fill='none' stroke='%23F7F7F5' stroke-width='4'/%3E%3Ccircle cx='32' cy='32' r='4' fill='%23F7F7F5'/%3E%3Cpath d='M15 32h13M36 32h13M32 36v13' stroke='%23F7F7F5' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' fill='%23111113'/%3E%3Ccircle cx='90' cy='90' r='46' fill='none' stroke='%23F7F7F5' stroke-width='10'/%3E%3Ccircle cx='90' cy='90' r='10' fill='%23F7F7F5'/%3E%3Cpath d='M44 90h36M100 90h36M90 100v36' stroke='%23F7F7F5' stroke-width='10' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --bg:#F7F7F5; --surface:#FFFFFF; --line:#E4E4E7; --line-strong:#D4D4D8;
+  --text:#111113; --muted:#63636A; --faint:#A1A1AA;
+  --accent:#1D4ED8; --accent-press:#1E40AF; --accent-soft:#EEF2FD;
+  --neg:#B91C1C;
+  --r:10px; --r-sm:8px;
+  --tap:48px;
+  --gutter:16px;
+  --safe-b:env(safe-area-inset-bottom,0px);
+  --safe-t:env(safe-area-inset-top,0px);
+  --font:"Inter",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;background:var(--bg);scroll-padding-top:124px;scroll-padding-bottom:150px}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:15px;line-height:1.4;
+  -webkit-font-smoothing:antialiased;min-height:100vh;min-height:100dvh;overflow-x:hidden;
+  -webkit-tap-highlight-color:transparent}
+button,input,select{font:inherit;color:inherit}
+button{background:none;border:0;cursor:pointer;touch-action:manipulation;-webkit-user-select:none;user-select:none}
+input,select{font-size:16px}
+.num,.amt,time{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;flex:none}
+[hidden]{display:none!important}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* ---------- Layout ---------- */
+.wrap{width:100%;max-width:1120px;margin:0 auto;padding:0 var(--gutter)}
+.top{position:sticky;top:0;z-index:20;background:rgba(247,247,245,.96);border-bottom:1px solid var(--line);padding-top:var(--safe-t)}
+.top-row{display:flex;align-items:center;gap:8px;height:56px}
+.brand{font-weight:700;font-size:17px;letter-spacing:-.01em;margin-right:auto;white-space:nowrap}
+.iconbtn{width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;border-radius:var(--r-sm);color:var(--text)}
+.iconbtn:active{background:var(--line)}
+.sync{display:inline-flex;align-items:center;gap:6px;height:44px;padding:0 6px;font-size:13px;color:var(--muted);white-space:nowrap;border-radius:var(--r-sm)}
+.sync .dot{width:7px;height:7px;border-radius:50%;background:var(--faint)}
+.sync[data-s="ok"] .dot{background:#15803D}
+.sync[data-s="busy"] .dot{background:var(--accent)}
+.sync[data-s="error"]{color:var(--neg)}
+.sync[data-s="error"] .dot{background:var(--neg)}
+.sync[data-s="error"]:active{background:#FBEAEA}
+
+.weeknav{display:grid;grid-template-columns:44px 1fr 44px;align-items:center;height:56px;gap:4px}
+.weeklabel{display:flex;flex-direction:column;align-items:center;justify-content:center;height:48px;border-radius:var(--r-sm);line-height:1.15}
+.weeklabel:active{background:var(--line)}
+.weeklabel b{font-size:16px;font-weight:600}
+.weeklabel span{font-size:12px;color:var(--muted)}
+.weeklabel .settled{color:var(--accent);font-weight:500}
+
+main.wrap{padding-top:12px;padding-bottom:calc(140px + var(--safe-b))}
+.days{display:grid;grid-template-columns:1fr;gap:12px}
+.day{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 12px 4px}
+.day-h{display:flex;align-items:baseline;gap:8px;padding:0 2px 8px}
+.day-h b{font-size:15px;font-weight:600}
+.day-h time{font-size:13px;color:var(--muted)}
+.day-h .today{margin-left:auto;font-size:12px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.04em}
+.day.is-today{border-color:var(--text)}
+
+.leg{border-top:1px solid var(--line);padding:10px 0 10px}
+.leg-h{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:0 2px 8px}
+.leg-h .dir{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.leg-h .meta{font-size:12px;color:var(--muted);text-align:right}
+.grid5{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.pill{height:var(--tap);min-width:44px;border:1px solid var(--line-strong);border-radius:var(--r-sm);background:var(--surface);
+  font-size:17px;font-weight:600;display:flex;align-items:center;justify-content:center;position:relative;transition:background-color .08s,border-color .08s}
+.pill:active{transform:scale(.97);background:var(--line)}
+.pill[aria-pressed="true"]{background:var(--text);border-color:var(--text);color:#fff}
+.pill[aria-pressed="true"]:active{background:#2A2A2E}
+.pill.is-driver{background:var(--accent);border-color:var(--accent);color:#fff}
+.pill.is-driver:active{background:var(--accent-press)}
+.pill .badge{position:absolute;top:4px;right:4px;width:12px;height:12px;stroke-width:2}
+.drv-cap{font-size:11px;color:var(--muted);padding:8px 2px 4px;letter-spacing:.02em}
+.drv{height:44px;min-width:44px;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;gap:4px;color:var(--faint);
+  border:1px solid transparent;font-size:12px;font-weight:600}
+.drv:active{background:var(--line)}
+.drv[aria-checked="true"]{color:var(--accent);border-color:var(--accent);background:var(--accent-soft)}
+.drv svg.i{width:18px;height:18px}
+
+.weekend-toggle{width:100%;min-height:48px;border:1px dashed var(--line-strong);border-radius:var(--r);color:var(--muted);font-size:14px;display:flex;align-items:center;justify-content:center;gap:8px}
+.weekend-toggle:active{background:var(--line)}
+
+/* ---------- Bottom bar ---------- */
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--surface);border-top:1px solid var(--line);padding-bottom:var(--safe-b)}
+.bar-in{display:flex;flex-direction:column;gap:8px;padding:10px var(--gutter) 10px}
+.bar-sum{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--muted);gap:8px;min-width:0}
+.bar-sum b{color:var(--text);font-weight:600}
+.bar-sum span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-act{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.btn{min-height:48px;border-radius:var(--r-sm);display:inline-flex;align-items:center;justify-content:center;gap:8px;font-size:15px;font-weight:600;padding:0 14px;border:1px solid var(--line-strong);background:var(--surface)}
+.btn:active{background:var(--line)}
+.btn.primary{background:var(--text);border-color:var(--text);color:#fff}
+.btn.primary:active{background:#2A2A2E}
+.btn.accent{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.accent:active{background:var(--accent-press)}
+.btn.ghost{border-color:transparent;color:var(--muted);font-weight:500}
+.btn.danger{color:var(--neg)}
+.btn[disabled]{opacity:.45;pointer-events:none}
+
+/* ---------- Sheets ---------- */
+.scrim{position:fixed;inset:0;z-index:40;background:rgba(17,17,19,.32);display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--bg);width:100%;max-width:560px;max-height:92vh;max-height:92dvh;overflow:auto;border-radius:14px 14px 0 0;border:1px solid var(--line);
+  padding:0 0 calc(16px + var(--safe-b));overscroll-behavior:contain}
+.sheet-h{position:sticky;top:0;background:var(--bg);display:flex;align-items:center;gap:8px;padding:8px 8px 8px var(--gutter);border-bottom:1px solid var(--line);z-index:1}
+.sheet-h h2{font-size:17px;font-weight:600;margin-right:auto}
+.sheet-b{padding:16px var(--gutter) 0;display:flex;flex-direction:column;gap:16px}
+.seg{display:grid;grid-template-columns:1fr 1fr;background:#EDEDEA;border-radius:var(--r-sm);padding:3px;gap:3px}
+.seg button{min-height:44px;border-radius:6px;font-size:14px;font-weight:500;color:var(--muted);line-height:1.15;padding:4px}
+.seg button small{display:block;font-size:11px;font-weight:400}
+.seg button[aria-selected="true"]{background:var(--surface);color:var(--text);box-shadow:0 0 0 1px var(--line)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+.card-h{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:12px 14px 0}
+.rows{list-style:none}
+.rows li{display:flex;align-items:center;gap:12px;min-height:48px;padding:0 14px;border-top:1px solid var(--line)}
+.rows li:first-child{border-top:0}
+.ini{width:28px;height:28px;border-radius:6px;background:var(--bg);border:1px solid var(--line);display:inline-flex;align-items:center;justify-content:center;font-weight:600;font-size:14px;flex:none}
+.balbar{flex:1;height:6px;position:relative;background:transparent}
+.balbar::before{content:"";position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:var(--line-strong)}
+.balbar i{position:absolute;top:0;bottom:0;border-radius:3px;background:var(--text)}
+.balbar i.neg{background:var(--neg)}
+.amt{font-weight:600;min-width:84px;text-align:right}
+.amt.neg{color:var(--neg)}
+.amt.zero{color:var(--faint);font-weight:500}
+.xfer{display:flex;align-items:center;gap:10px;flex:1}
+.xfer svg.i{color:var(--muted);width:18px;height:18px}
+.empty{padding:16px 14px;color:var(--muted);font-size:14px}
+.note{font-size:13px;color:var(--muted)}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:13px;color:var(--muted)}
+.inrow{display:flex;gap:8px}
+.input{min-height:48px;border:1px solid var(--line-strong);border-radius:var(--r-sm);background:var(--surface);padding:0 12px;font-size:16px;width:100%;min-width:0}
+.input:focus{outline:2px solid var(--accent);outline-offset:-1px;border-color:var(--accent)}
+.manual{width:100%;min-height:220px;padding:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:16px;line-height:1.4;border:1px solid var(--line-strong);border-radius:var(--r-sm);background:var(--surface);resize:vertical}
+
+/* ---------- PIN ---------- */
+.pin{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:24px var(--gutter) calc(24px + var(--safe-b))}
+.pin form{width:100%;max-width:320px;display:flex;flex-direction:column;gap:16px}
+.pin h1{font-size:22px;font-weight:700;letter-spacing:-.01em}
+.pin p{color:var(--muted);font-size:15px;margin-top:-10px}
+.pin-input{height:64px;text-align:center;font-size:32px!important;letter-spacing:.5em;padding-left:.5em;font-weight:600;font-variant-numeric:tabular-nums}
+.pin-err{color:var(--neg);font-size:14px;min-height:20px}
+
+/* ---------- Toast ---------- */
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(132px + var(--safe-b));z-index:50;background:var(--text);color:#fff;font-size:14px;
+  padding:10px 14px;border-radius:var(--r-sm);max-width:calc(100% - 32px);text-align:center}
+
+/* ---------- Desktop ---------- */
+@media (min-width:760px){
+  .days{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .bar-in{flex-direction:row;align-items:center;max-width:1120px;margin:0 auto}
+  .bar-sum{flex:1;flex-direction:column;align-items:flex-start;gap:0}
+  .bar-act{grid-template-columns:auto auto}
+  main.wrap{padding-bottom:calc(100px + var(--safe-b))}
+  .toast{bottom:calc(92px + var(--safe-b))}
+  .scrim{align-items:center;padding:24px}
+  .sheet{border-radius:14px;max-height:86vh}
+}
+@media (min-width:1100px){ .days{grid-template-columns:repeat(3,minmax(0,1fr))} }
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-wheel" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2"/><path d="M3.5 10.5h6.5M14 10.5h6.5M12 14v7"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.3-4.9L4 8"/><path d="M4 4v4h4"/><path d="M4 13a8 8 0 0 0 14.3 4.9L20 16"/><path d="M20 20v-4h-4"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></symbol>
+  <symbol id="i-left" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
+  <symbol id="i-right" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
+  <symbol id="i-scale" viewBox="0 0 24 24"><path d="M4 7h16M7 7v12M17 7v12M4 19h6M14 19h6"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h15M14 7l5 5-5 5"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+</svg>
+
+<div id="pinScreen" class="pin" hidden>
+  <form id="pinForm" novalidate>
+    <h1>Cotxe Uni</h1>
+    <p>PIN del grup</p>
+    <input id="pinInput" class="input pin-input" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4"
+      autocomplete="one-time-code" aria-label="PIN de 4 xifres" enterkeyhint="go">
+    <div id="pinErr" class="pin-err" role="alert"></div>
+    <button id="pinBtn" class="btn primary" type="submit">Entrar</button>
+  </form>
+</div>
+
+<div id="app" hidden>
+  <header class="top">
+    <div class="wrap">
+      <div class="top-row">
+        <div class="brand">Cotxe Uni</div>
+        <button id="syncBtn" class="sync" data-s="idle" type="button" aria-live="polite"><span class="dot"></span><span id="syncTxt">Carregant…</span></button>
+        <button id="refreshBtn" class="iconbtn" type="button" aria-label="Actualitzar"><svg class="i"><use href="#i-refresh"/></svg></button>
+        <button id="settingsBtn" class="iconbtn" type="button" aria-label="Configuració"><svg class="i"><use href="#i-gear"/></svg></button>
+      </div>
+      <nav class="weeknav" aria-label="Setmana">
+        <button id="prevWeek" class="iconbtn" type="button" aria-label="Setmana anterior"><svg class="i"><use href="#i-left"/></svg></button>
+        <button id="weekLabel" class="weeklabel" type="button" aria-label="Anar a la setmana actual"></button>
+        <button id="nextWeek" class="iconbtn" type="button" aria-label="Setmana següent"><svg class="i"><use href="#i-right"/></svg></button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div id="days" class="days"></div>
+    <div style="margin-top:12px"><button id="weekendBtn" class="weekend-toggle" type="button"></button></div>
+  </main>
+
+  <footer class="bar">
+    <div class="bar-in">
+      <div class="bar-sum"><span id="sumWeek"></span><span id="sumTotal"></span></div>
+      <div class="bar-act">
+        <button id="openSettle" class="btn primary" type="button"><svg class="i"><use href="#i-scale"/></svg>Liquidació</button>
+        <button id="copyBtn" class="btn" type="button"><svg class="i"><use href="#i-copy"/></svg>Copiar resum</button>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<div id="settleSheet" class="scrim" hidden>
+  <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="settleTitle">
+    <div class="sheet-h"><h2 id="settleTitle">Liquidació</h2>
+      <button class="iconbtn" type="button" data-close aria-label="Tancar"><svg class="i"><use href="#i-close"/></svg></button></div>
+    <div class="sheet-b">
+      <div class="seg" role="tablist">
+        <button id="tabWeek" role="tab" type="button" aria-selected="true">Setmana<small id="tabWeekSub"></small></button>
+        <button id="tabTotal" role="tab" type="button" aria-selected="false">Total pendent<small id="tabTotalSub"></small></button>
+      </div>
+      <div id="settleBody"></div>
+    </div>
+  </section>
+</div>
+
+<div id="settingsSheet" class="scrim" hidden>
+  <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="setTitle">
+    <div class="sheet-h"><h2 id="setTitle">Configuració</h2>
+      <button class="iconbtn" type="button" data-close aria-label="Tancar"><svg class="i"><use href="#i-close"/></svg></button></div>
+    <div class="sheet-b">
+      <form id="priceForm" class="card" style="padding:14px" novalidate>
+        <div class="field">
+          <label for="priceInput">Tarifa per trajecte (€)</label>
+          <div class="inrow">
+            <input id="priceInput" class="input num" type="text" inputmode="decimal" autocomplete="off" aria-describedby="priceNote">
+            <button class="btn primary" type="submit">Desar</button>
+          </div>
+          <div id="priceNote" class="note">S'aplica als trajectes nous. Els trajectes ja registrats conserven la seva tarifa.</div>
+        </div>
+      </form>
+      <button id="logoutBtn" class="btn ghost danger" type="button">Canviar PIN / Sortir</button>
+    </div>
+  </section>
+</div>
+
+<div id="copySheet" class="scrim" hidden>
+  <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="copyTitle">
+    <div class="sheet-h"><h2 id="copyTitle">Resum per a WhatsApp</h2>
+      <button class="iconbtn" type="button" data-close aria-label="Tancar"><svg class="i"><use href="#i-close"/></svg></button></div>
+    <div class="sheet-b">
+      <p class="note">No s'ha pogut copiar automàticament. Mantén premut el text per seleccionar-lo i copiar-lo.</p>
+      <textarea id="copyText" class="manual" readonly></textarea>
+    </div>
+  </section>
+</div>
+
+<div id="toast" class="toast" role="status" hidden></div>
+
+<!-- Engine (pure logic + Supabase RPC + optimistic store), inlined from carpool-engine.js -->
+<script id="carpool-engine">
+/*!
+ * carpool-engine.js — Cotxe Uni: pure logic + Supabase RPC layer.
+ * Zero dependencies. Works as a browser <script> (window.CarpoolEngine) or a CommonJS module.
+ *
+ * Money model: every amount is an integer number of cents. Internally, trip shares are
+ * computed in "units" of 1/UNIT cent, where UNIT = lcm(1..5) = 60, so price/N is exact
+ * for any N in 1..5. Rounding to cents happens once, at the end, with a deterministic
+ * largest-remainder method that keeps the sum of balances exactly 0.
+ */
+(function (root, factory) {
+  'use strict';
+  var api = factory();
+  if (typeof module === 'object' && module.exports) module.exports = api;
+  else root.CarpoolEngine = api;
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+
+  var MEMBERS = Object.freeze(['A', 'J', 'M', 'Q', 'R']);
+  var DIRECTIONS = Object.freeze(['anada', 'tornada']);
+  var MEMBER_SET = new Set(MEMBERS);
+
+  function gcd(a, b) { while (b) { var t = a % b; a = b; b = t; } return a; }
+  var UNIT = 1;
+  for (var i = 1; i <= MEMBERS.length; i++) UNIT = (UNIT * i) / gcd(UNIT, i); // 60
+
+  function zeroMap() { var o = {}; MEMBERS.forEach(function (m) { o[m] = 0; }); return o; }
+
+  /* ------------------------------------------------------------------ dates */
+  var DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
+  var WEEK_RE = /^(\d{4})-W(\d{2})$/;
+  var DAY_MS = 86400000;
+
+  function parseDate(s) {
+    var m = typeof s === 'string' && DATE_RE.exec(s);
+    if (!m) throw new Error('INVALID_DATE: ' + s);
+    var y = +m[1], mo = +m[2], d = +m[3];
+    var t = Date.UTC(y, mo - 1, d);
+    var dt = new Date(t);
+    if (dt.getUTCFullYear() !== y || dt.getUTCMonth() !== mo - 1 || dt.getUTCDate() !== d) {
+      throw new Error('INVALID_DATE: ' + s);
+    }
+    return t;
+  }
+  function fmtDate(t) {
+    var d = new Date(t);
+    return d.getUTCFullYear() + '-' + String(d.getUTCMonth() + 1).padStart(2, '0') + '-' +
+      String(d.getUTCDate()).padStart(2, '0');
+  }
+  function isoDow(t) { return ((new Date(t).getUTCDay() + 6) % 7) + 1; } // Mon=1..Sun=7
+
+  function isoWeekParts(t) {
+    var thursday = t + (4 - isoDow(t)) * DAY_MS;
+    var year = new Date(thursday).getUTCFullYear();
+    var week = Math.floor((thursday - Date.UTC(year, 0, 1)) / DAY_MS / 7) + 1;
+    return { year: year, week: week };
+  }
+  function weeksInYear(year) { return isoWeekParts(Date.UTC(year, 11, 28)).week; }
+
+  function isoWeekId(dateStr) {
+    var p = isoWeekParts(parseDate(dateStr));
+    return p.year + '-W' + String(p.week).padStart(2, '0');
+  }
+  function weekMondayMs(weekId) {
+    var m = typeof weekId === 'string' && WEEK_RE.exec(weekId);
+    if (!m) throw new Error('INVALID_WEEK: ' + weekId);
+    var year = +m[1], week = +m[2];
+    if (week < 1 || week > weeksInYear(year)) throw new Error('INVALID_WEEK: ' + weekId);
+    var jan4 = Date.UTC(year, 0, 4);
+    return jan4 - (isoDow(jan4) - 1) * DAY_MS + (week - 1) * 7 * DAY_MS;
+  }
+  function weekDates(weekId) {
+    var mon = weekMondayMs(weekId), out = [];
+    for (var k = 0; k < 7; k++) out.push(fmtDate(mon + k * DAY_MS));
+    return out;
+  }
+  function shiftWeek(weekId, delta) {
+    return isoWeekId(fmtDate(weekMondayMs(weekId) + (delta | 0) * 7 * DAY_MS));
+  }
+  function todayLocal(now) {
+    var d = now || new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' +
+      String(d.getDate()).padStart(2, '0');
+  }
+  function currentWeekId(now) { return isoWeekId(todayLocal(now)); }
+
+  var MONTHS_CA = ['gen', 'febr', 'març', 'abr', 'maig', 'juny', 'jul', 'ag', 'set', 'oct', 'nov', 'des'];
+  var DAYS_CA = ['Dl', 'Dt', 'Dc', 'Dj', 'Dv', 'Ds', 'Dg'];
+
+  function weekRangeLabel(weekId, opts) {
+    var d = weekDates(weekId);
+    var a = new Date(parseDate(d[0]));
+    var b = new Date(parseDate(d[opts && opts.includeWeekend ? 6 : 4]));
+    var ma = MONTHS_CA[a.getUTCMonth()], mb = MONTHS_CA[b.getUTCMonth()];
+    return a.getUTCMonth() === b.getUTCMonth()
+      ? a.getUTCDate() + ' – ' + b.getUTCDate() + ' ' + mb
+      : a.getUTCDate() + ' ' + ma + ' – ' + b.getUTCDate() + ' ' + mb;
+  }
+  function dayLabel(dateStr) {
+    var t = parseDate(dateStr);
+    return DAYS_CA[isoDow(t) - 1] + ' ' + new Date(t).getUTCDate();
+  }
+
+  function tripKey(dateStr, direction) {
+    parseDate(dateStr);
+    if (DIRECTIONS.indexOf(direction) < 0) throw new Error('INVALID_DIRECTION: ' + direction);
+    return dateStr + '_' + direction;
+  }
+
+  /* ------------------------------------------------------------ formatting */
+  function formatCents(c) {
+    if (!Number.isInteger(c)) throw new Error('NOT_INTEGER_CENTS: ' + c);
+    var neg = c < 0, a = Math.abs(c);
+    var euros = String(Math.floor(a / 100)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    return (neg ? '-' : '') + euros + ',' + String(a % 100).padStart(2, '0') + ' €';
+  }
+
+  /* ----------------------------------------------------------- trip rules */
+  function cleanMembers(list) {
+    var set = new Set();
+    if (Array.isArray(list)) list.forEach(function (m) { if (MEMBER_SET.has(m)) set.add(m); });
+    return MEMBERS.filter(function (m) { return set.has(m); }); // canonical alphabetical order
+  }
+  /** Canonical form: valid members only, alphabetical, driver (if valid) always an occupant. */
+  function normalizeTrip(trip) {
+    var t = trip || {};
+    var driver = MEMBER_SET.has(t.driver) ? t.driver : null;
+    var ps = cleanMembers(t.passengers);
+    if (driver && ps.indexOf(driver) < 0) ps = cleanMembers(ps.concat([driver]));
+    var out = {};
+    for (var k in t) if (Object.prototype.hasOwnProperty.call(t, k)) out[k] = t[k];
+    out.driver = driver; out.passengers = ps;
+    return out;
+  }
+  function togglePassenger(trip, member) {
+    if (!MEMBER_SET.has(member)) throw new Error('UNKNOWN_MEMBER: ' + member);
+    var t = normalizeTrip(trip);
+    if (t.passengers.indexOf(member) >= 0) {
+      t.passengers = t.passengers.filter(function (m) { return m !== member; });
+      if (t.driver === member) t.driver = null; // unticking the driver clears the driver
+    } else {
+      t.passengers = cleanMembers(t.passengers.concat([member]));
+    }
+    return t;
+  }
+  /** Tap on the driver selector: picks the driver (adds as occupant); tapping the same one again unsets it. */
+  function setDriver(trip, member) {
+    if (member !== null && !MEMBER_SET.has(member)) throw new Error('UNKNOWN_MEMBER: ' + member);
+    var t = normalizeTrip(trip);
+    if (member === null || t.driver === member) { t.driver = null; return t; }
+    t.driver = member;
+    t.passengers = cleanMembers(t.passengers.concat([member]));
+    return t;
+  }
+  function validPrice(p) { return Number.isSafeInteger(p) && p > 0 ? p : 0; }
+
+  /* --------------------------------------------------------------- money */
+  /** Exact per-member balance of ONE trip in 1/UNIT-cent units (positive = is owed). */
+  function tripUnits(trip, acc) {
+    var t = normalizeTrip(trip);
+    var price = validPrice(t.price_cents);
+    var n = t.passengers.length;
+    if (!t.driver || n <= 1 || price === 0) return acc;
+    var share = (price * UNIT) / n; // exact integer because UNIT % n === 0
+    t.passengers.forEach(function (m) {
+      if (m === t.driver) return;
+      acc[m] -= share;
+      acc[t.driver] += share;
+    });
+    return acc;
+  }
+  /** Round a zero-sum map of units to integer cents, keeping the sum exactly 0 (deterministic). */
+  function unitsToCents(units) {
+    var out = {}, rem = [], total = 0;
+    MEMBERS.forEach(function (m, idx) {
+      var f = Math.floor(units[m] / UNIT);
+      out[m] = f; total += f;
+      rem.push({ m: m, r: units[m] - f * UNIT, idx: idx });
+    });
+    var missing = -total; // 0 <= missing < MEMBERS.length
+    rem.sort(function (x, y) { return (y.r - x.r) || (x.idx - y.idx); });
+    for (var k = 0; k < missing; k++) out[rem[k].m] += 1;
+    MEMBERS.forEach(function (m) { if (out[m] === 0) out[m] = 0; }); // normalise -0
+    return out;
+  }
+  function computeBalances(trips) {
+    var acc = zeroMap();
+    (Array.isArray(trips) ? trips : []).forEach(function (t) {
+      if (t && typeof t === 'object') tripUnits(t, acc);
+    });
+    return unitsToCents(acc);
+  }
+  function settledSet(weeks) {
+    var s = new Set();
+    (Array.isArray(weeks) ? weeks : []).forEach(function (w) { if (w && w.settled === true) s.add(w.week_id); });
+    return s;
+  }
+  function tripWeek(t) {
+    if (t && typeof t.week_id === 'string') return t.week_id;
+    try { return isoWeekId(t.trip_date); } catch (e) { return null; }
+  }
+  function tripsOfWeek(trips, weekId) {
+    return (Array.isArray(trips) ? trips : []).filter(function (t) { return t && tripWeek(t) === weekId; });
+  }
+  function weekBalances(trips, weekId) { return computeBalances(tripsOfWeek(trips, weekId)); }
+  /** Accumulated balance over every week NOT marked settled (missing weeks row = pending). */
+  function pendingBalances(trips, weeks) {
+    var s = settledSet(weeks);
+    return computeBalances((Array.isArray(trips) ? trips : []).filter(function (t) {
+      return t && !s.has(tripWeek(t));
+    }));
+  }
+  function pendingWeekIds(trips, weeks) {
+    var s = settledSet(weeks), ids = new Set();
+    (Array.isArray(trips) ? trips : []).forEach(function (t) {
+      var w = t && tripWeek(t);
+      if (w && !s.has(w)) {
+        var b = computeBalances([t]);
+        if (MEMBERS.some(function (m) { return b[m] !== 0; })) ids.add(w);
+      }
+    });
+    return Array.from(ids).sort();
+  }
+  function isWeekSettled(weeks, weekId) { return settledSet(weeks).has(weekId); }
+
+  /* ------------------------------------------------------ minimal Bizums */
+  function greedy(members, bal) {
+    var b = {}; members.forEach(function (m) { b[m] = bal[m]; });
+    var out = [];
+    for (;;) {
+      var debtor = null, creditor = null;
+      members.forEach(function (m) {
+        if (b[m] < 0 && (debtor === null || b[m] < b[debtor])) debtor = m;
+        if (b[m] > 0 && (creditor === null || b[m] > b[creditor])) creditor = m;
+      });
+      if (debtor === null || creditor === null) break;
+      var amt = Math.min(-b[debtor], b[creditor]);
+      out.push({ from: debtor, to: creditor, cents: amt });
+      b[debtor] += amt; b[creditor] -= amt;
+    }
+    return out;
+  }
+  /**
+   * Minimum number of transfers. Plain greedy (largest debtor -> largest creditor) is NOT always
+   * optimal; the true optimum is (#non-zero members) − (max number of disjoint zero-sum groups).
+   * With 5 members an exact bitmask DP is trivial (≤ 32 subsets), then greedy inside each group
+   * (which needs exactly |group|−1 transfers when the group has no zero-sum sub-group).
+   */
+  function minimalTransfers(balances) {
+    var bal = {};
+    MEMBERS.forEach(function (m) {
+      var v = balances && balances[m] !== undefined ? balances[m] : 0;
+      if (!Number.isSafeInteger(v)) throw new Error('NOT_INTEGER_CENTS: ' + m);
+      bal[m] = v;
+    });
+    var nz = MEMBERS.filter(function (m) { return bal[m] !== 0; });
+    var n = nz.length, full = (1 << n) - 1, sumAll = 0;
+    nz.forEach(function (m) { sumAll += bal[m]; });
+    if (sumAll !== 0) throw new Error('BALANCES_NOT_ZERO_SUM: ' + sumAll);
+    if (n === 0) return [];
+    var s = new Array(full + 1).fill(0);
+    for (var mask = 1; mask <= full; mask++) {
+      var low = mask & -mask; s[mask] = s[mask ^ low] + bal[nz[31 - Math.clz32(low)]];
+    }
+    // dp[mask] = max zero-sum groups partitioning mask; choice[mask] = group containing lowest bit
+    var dp = new Array(full + 1).fill(-1), choice = new Array(full + 1).fill(0);
+    dp[0] = 0;
+    for (mask = 1; mask <= full; mask++) {
+      if (s[mask] !== 0) continue;
+      var lowBit = mask & -mask;
+      for (var sub = mask; sub; sub = (sub - 1) & mask) {
+        if (!(sub & lowBit) || s[sub] !== 0 || dp[mask ^ sub] < 0) continue;
+        if (dp[mask ^ sub] + 1 > dp[mask]) { dp[mask] = dp[mask ^ sub] + 1; choice[mask] = sub; }
+      }
+    }
+    var out = [], rest = full;
+    while (rest) {
+      var g = choice[rest];
+      var groupMembers = nz.filter(function (_, k) { return g & (1 << k); });
+      out = out.concat(greedy(groupMembers, bal));
+      rest ^= g;
+    }
+    return out.sort(function (x, y) {
+      return (MEMBERS.indexOf(x.from) - MEMBERS.indexOf(y.from)) || (MEMBERS.indexOf(x.to) - MEMBERS.indexOf(y.to));
+    });
+  }
+
+  /* ---------------------------------------------------- WhatsApp summary */
+  function whatsappSummary(trips, weekId, weeks, opts) {
+    var wk = tripsOfWeek(trips, weekId).map(normalizeTrip);
+    var settled = isWeekSettled(weeks, weekId);
+    var lines = ['Cotxe · Setmana ' + weekRangeLabel(weekId, opts) + (settled ? ' (Liquidada)' : ''), ''];
+    var byDate = {};
+    wk.forEach(function (t) {
+      if (!t.passengers.length) return;
+      (byDate[t.trip_date] = byDate[t.trip_date] || {})[t.direction] = t;
+    });
+    var dates = Object.keys(byDate).sort();
+    if (!dates.length) lines.push('Cap trajecte aquesta setmana.');
+    dates.forEach(function (d) {
+      var parts = [];
+      DIRECTIONS.forEach(function (dir) {
+        var t = byDate[d][dir];
+        if (!t) return;
+        var name = dir === 'anada' ? 'Anada' : 'Tornada';
+        var others = t.passengers.filter(function (m) { return m !== t.driver; });
+        var who = t.driver
+          ? t.driver + (others.length ? ' (' + others.join(', ') + ')' : ' sol')
+          : 'sense conductor (' + t.passengers.join(', ') + ')';
+        parts.push(name + ': ' + who);
+      });
+      lines.push(dayLabel(d) + ' · ' + parts.join(' · '));
+    });
+    var bal = computeBalances(wk);
+    var tr = minimalTransfers(bal);
+    lines.push('');
+    lines.push('Bizums:');
+    if (!tr.length) lines.push('Cap deute.');
+    tr.forEach(function (x) { lines.push(x.from + ' → ' + x.to + ' ' + formatCents(x.cents)); });
+    return lines.join('\n');
+  }
+
+  /* ======================================================= Supabase layer */
+  function b64urlDecode(s) {
+    s = s.replace(/-/g, '+').replace(/_/g, '/');
+    while (s.length % 4) s += '=';
+    if (typeof atob === 'function') return decodeURIComponent(escape(atob(s)));
+    return Buffer.from(s, 'base64').toString('utf8'); // eslint-disable-line no-undef
+  }
+  /** Classifies a key and REFUSES anything that is not public. */
+  function classifyKey(key) {
+    if (typeof key !== 'string' || !key) throw new Error('KEY_MISSING');
+    if (key.indexOf('sb_secret_') === 0) throw new Error('KEY_IS_SECRET');
+    if (key.indexOf('sb_publishable_') === 0) return 'publishable';
+    if (key.indexOf('eyJ') === 0) {
+      var payload;
+      try { payload = JSON.parse(b64urlDecode(key.split('.')[1] || '')); } catch (e) { throw new Error('KEY_MALFORMED'); }
+      if (!payload || payload.role !== 'anon') throw new Error('KEY_NOT_ANON');
+      return 'jwt';
+    }
+    throw new Error('KEY_UNKNOWN_TYPE');
+  }
+  function buildHeaders(key) {
+    var type = classifyKey(key);
+    var h = { 'apikey': key, 'Content-Type': 'application/json' };
+    if (type === 'jwt') h['Authorization'] = 'Bearer ' + key; // never for sb_publishable_
+    return h;
+  }
+
+  function RpcError(code, message, status) {
+    var e = new Error(message || code);
+    e.name = 'RpcError'; e.code = code; e.status = status || 0;
+    return e;
+  }
+
+  function SupabaseClient(opts) {
+    if (!(this instanceof SupabaseClient)) return new SupabaseClient(opts);
+    if (!opts || typeof opts.url !== 'string' || !/^https:\/\//.test(opts.url)) throw new Error('URL_INVALID');
+    this.url = opts.url.replace(/\/+$/, '');
+    this.headers = buildHeaders(opts.key);
+    this.keyType = classifyKey(opts.key);
+    this.fetch = opts.fetch || (typeof fetch === 'function' ? fetch.bind(null) : null);
+    this.timeoutMs = opts.timeoutMs || 15000;
+    if (!this.fetch) throw new Error('FETCH_UNAVAILABLE');
+  }
+  SupabaseClient.prototype.rpc = function (name, body) {
+    var self = this;
+    var ctrl = typeof AbortController === 'function' ? new AbortController() : null;
+    var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, self.timeoutMs) : null;
+    return Promise.resolve()
+      .then(function () {
+        return self.fetch(self.url + '/rest/v1/rpc/' + encodeURIComponent(name), {
+          method: 'POST', headers: self.headers, body: JSON.stringify(body || {}),
+          signal: ctrl ? ctrl.signal : undefined,
+        });
+      })
+      .then(function (res) {
+        return res.text().then(function (txt) {
+          var data = null;
+          try { data = txt ? JSON.parse(txt) : null; } catch (e) { data = txt; }
+          var isObj = data && typeof data === 'object' && !Array.isArray(data);
+          var pinErr = isObj && (data.message === 'PIN_INVALID' || data.message === 'PIN_LOCKED') ? data.message : null;
+          // Error bodies are honoured even with HTTP 200 (defence in depth: the server sets the
+          // status through the response.status GUC so that failed attempts are committed).
+          if (res.ok && !pinErr) return data;
+          var msg = isObj ? [data.message, data.details, data.hint].filter(Boolean).join(' ') : String(data);
+          if (pinErr === 'PIN_LOCKED' || /PIN_LOCKED/.test(msg)) {
+            var e = RpcError('PIN_LOCKED', 'PIN_LOCKED', res.status);
+            e.retryAfterS = isObj && Number.isSafeInteger(data.retry_after_s) ? data.retry_after_s : null;
+            throw e;
+          }
+          if (pinErr === 'PIN_INVALID' || /PIN_INVALID/.test(msg)) throw RpcError('PIN_INVALID', 'PIN_INVALID', res.status);
+          throw RpcError('HTTP_' + res.status, msg, res.status);
+        });
+      }, function (err) {
+        throw RpcError('NETWORK', (err && err.message) || 'NETWORK');
+      })
+      .finally(function () { if (timer) clearTimeout(timer); });
+  };
+  SupabaseClient.prototype.getState = function (pin) { return this.rpc('get_carpool_state', { p_pin: pin }); };
+  SupabaseClient.prototype.upsertTrip = function (pin, t) {
+    return this.rpc('upsert_trip', {
+      p_pin: pin, p_trip_key: t.trip_key, p_week_id: t.week_id, p_trip_date: t.trip_date,
+      p_direction: t.direction, p_driver: t.driver, p_passengers: t.passengers, p_price_cents: t.price_cents,
+    });
+  };
+  SupabaseClient.prototype.setWeekSettled = function (pin, weekId, settled) {
+    return this.rpc('set_week_settled', { p_pin: pin, p_week_id: weekId, p_settled: !!settled });
+  };
+  SupabaseClient.prototype.setDefaultPrice = function (pin, cents) {
+    return this.rpc('set_default_price', { p_pin: pin, p_price_cents: cents });
+  };
+
+  /* ================================================== store (state + sync) */
+  var PIN_KEY = 'uni_carpool_pin';
+  var CACHE_KEY = 'uni_carpool_cache_v1';
+  var DEFAULT_PRICE = 600;
+
+  function safeStorage(s) {
+    return {
+      get: function (k) { try { return s ? s.getItem(k) : null; } catch (e) { return null; } },
+      set: function (k, v) { try { if (s) s.setItem(k, v); } catch (e) { /* quota / private mode */ } },
+      del: function (k) { try { if (s) s.removeItem(k); } catch (e) { /* ignore */ } },
+    };
+  }
+  function sanitizeState(raw) {
+    var r = raw && typeof raw === 'object' ? raw : {};
+    return {
+      trips: (Array.isArray(r.trips) ? r.trips : []).filter(function (t) { return t && typeof t.trip_key === 'string'; }).map(normalizeTrip),
+      weeks: (Array.isArray(r.weeks) ? r.weeks : []).filter(function (w) { return w && typeof w.week_id === 'string'; }),
+      default_price_cents: validPrice(r.default_price_cents) || DEFAULT_PRICE,
+    };
+  }
+
+  /**
+   * CarpoolStore: optimistic UI state + per-trip_key serialized writes.
+   * - Each trip_key has its own queue. Only the LATEST desired state is sent (upsert is a full
+   *   replacement, so intermediate taps can be coalesced) and never two requests in parallel
+   *   for the same key -> no out-of-order writes.
+   * - refresh() re-applies local pending edits over the server snapshot and ignores stale
+   *   responses (sequence number), so a refresh never "un-does" a tap still in flight.
+   */
+  function CarpoolStore(opts) {
+    if (!(this instanceof CarpoolStore)) return new CarpoolStore(opts);
+    this.client = opts.client;
+    this.store = safeStorage(opts.storage);
+    this.onChange = opts.onChange || function () {};
+    this.pin = this.store.get(PIN_KEY);
+    var cached = null;
+    try { cached = JSON.parse(this.store.get(CACHE_KEY) || 'null'); } catch (e) { cached = null; }
+    this.state = sanitizeState(cached);
+    this.fromCache = !!cached;
+    this.status = 'idle'; // idle | syncing | saved | error
+    this.lastError = null;
+    this._q = {};       // trip_key -> { pending: trip|null, inflight: trip|null, running: bool, failed: bool }
+    this._seq = 0;
+    this._other = 0;    // in-flight non-trip writes
+  }
+  var SP = CarpoolStore.prototype;
+  SP._emit = function () { try { this.onChange(this); } catch (e) { /* UI errors must not break sync */ } };
+  SP._persist = function () { this.store.set(CACHE_KEY, JSON.stringify(this.state)); };
+  SP._setStatus = function () {
+    var self = this;
+    var keys = Object.keys(this._q);
+    var failed = keys.some(function (k) { return self._q[k].failed; });
+    var busy = this._other > 0 || keys.some(function (k) { return self._q[k].running || self._q[k].pending; });
+    this.status = failed || this.lastError ? 'error' : busy ? 'syncing' : 'saved';
+  };
+  SP.hasPin = function () { return !!this.pin; };
+  SP.login = function (pin) {
+    var self = this;
+    if (typeof pin !== 'string' || !/^\d{4}$/.test(pin)) return Promise.reject(RpcError('PIN_FORMAT', 'PIN_FORMAT'));
+    return this.client.getState(pin).then(function (raw) {
+      self.pin = pin; self.store.set(PIN_KEY, pin);
+      self._applyServer(raw); return self.state;
+    });
+  };
+  SP.logout = function () {
+    this.pin = null; this.store.del(PIN_KEY); this.store.del(CACHE_KEY);
+    this.state = sanitizeState(null); this._q = {}; this.status = 'idle'; this._emit();
+  };
+  SP._localOverrides = function () {
+    var self = this, o = {};
+    Object.keys(this._q).forEach(function (k) {
+      var q = self._q[k], t = q.pending || q.inflight;
+      if (t) o[k] = t;
+    });
+    return o;
+  };
+  SP._applyServer = function (raw) {
+    var s = sanitizeState(raw), over = this._localOverrides();
+    var byKey = {};
+    s.trips.forEach(function (t) { byKey[t.trip_key] = t; });
+    Object.keys(over).forEach(function (k) { byKey[k] = over[k]; });
+    s.trips = Object.keys(byKey).sort().map(function (k) { return byKey[k]; });
+    this.state = s; this.fromCache = false; this.lastError = null;
+    this._persist(); this._setStatus(); this._emit();
+  };
+  SP.refresh = function () {
+    var self = this;
+    if (!this.pin) return Promise.resolve(this.state);
+    var seq = ++this._seq;
+    return this.client.getState(this.pin).then(function (raw) {
+      if (seq !== self._seq) return self.state; // stale response, a newer refresh started
+      self._applyServer(raw); return self.state;
+    }, function (err) {
+      if (err && err.code === 'PIN_INVALID') { self.logout(); throw err; } // PIN changed server-side
+      if (seq === self._seq) { self.lastError = err; self._setStatus(); self._emit(); }
+      throw err;
+    });
+  };
+  SP.getTrip = function (dateStr, direction) {
+    var key = tripKey(dateStr, direction);
+    for (var k = 0; k < this.state.trips.length; k++) if (this.state.trips[k].trip_key === key) return this.state.trips[k];
+    return { trip_key: key, week_id: isoWeekId(dateStr), trip_date: dateStr, direction: direction,
+      driver: null, passengers: [], price_cents: this.state.default_price_cents };
+  };
+  SP._putLocal = function (trip) {
+    var t = normalizeTrip(trip), found = false;
+    this.state.trips = this.state.trips.map(function (x) { if (x.trip_key === t.trip_key) { found = true; return t; } return x; });
+    if (!found) this.state.trips.push(t);
+    this._persist();
+    return t;
+  };
+  SP.updateTrip = function (dateStr, direction, mutate) {
+    var t = this._putLocal(mutate(this.getTrip(dateStr, direction)));
+    var q = this._q[t.trip_key] || (this._q[t.trip_key] = { pending: null, inflight: null, running: false, failed: false });
+    q.pending = t; q.failed = false;
+    this._setStatus(); this._emit();
+    return this._drain(t.trip_key);
+  };
+  SP.togglePassenger = function (d, dir, m) { return this.updateTrip(d, dir, function (t) { return togglePassenger(t, m); }); };
+  SP.setDriver = function (d, dir, m) { return this.updateTrip(d, dir, function (t) { return setDriver(t, m); }); };
+  SP._drain = function (key) {
+    var self = this, q = this._q[key];
+    if (q.running) return q.promise;
+    q.running = true;
+    q.promise = (function loop() {
+      if (!q.pending) {
+        q.running = false; q.inflight = null;
+        if (!q.failed) delete self._q[key];
+        self._setStatus(); self._emit();
+        return Promise.resolve();
+      }
+      var t = q.pending; q.pending = null; q.inflight = t;
+      return self.client.upsertTrip(self.pin, t).then(function () {
+        q.inflight = null; return loop();
+      }, function (err) {
+        if (!q.pending) q.pending = t; // keep the latest intent for retry()
+        q.inflight = null; q.running = false; q.failed = true;
+        self.lastError = err;
+        if (err && err.code === 'PIN_INVALID') { self.logout(); }
+        self._setStatus(); self._emit();
+        throw err;
+      });
+    })();
+    return q.promise;
+  };
+  /** Re-send every failed trip write (button "Reintentar"). */
+  SP.retry = function () {
+    var self = this; this.lastError = null;
+    var jobs = Object.keys(this._q).filter(function (k) { return self._q[k].failed; }).map(function (k) {
+      self._q[k].failed = false; return self._drain(k).catch(function (e) { return e; });
+    });
+    this._setStatus(); this._emit();
+    return Promise.all(jobs);
+  };
+  SP._otherWrite = function (apply, call) {
+    var self = this, snapshot = JSON.stringify(this.state);
+    apply(); this._persist(); this._other++; this._setStatus(); this._emit();
+    return call().then(function () {
+      self._other--; self._setStatus(); self._emit();
+    }, function (err) {
+      self._other--; self.state = JSON.parse(snapshot); self._persist(); // roll back
+      self.lastError = err; self._setStatus(); self._emit(); throw err;
+    });
+  };
+  SP.setWeekSettled = function (weekId, settled) {
+    var self = this; weekMondayMs(weekId);
+    return this._otherWrite(function () {
+      var found = false;
+      self.state.weeks = self.state.weeks.map(function (w) {
+        if (w.week_id === weekId) { found = true; return { week_id: weekId, settled: !!settled }; } return w;
+      });
+      if (!found) self.state.weeks.push({ week_id: weekId, settled: !!settled });
+    }, function () { return self.client.setWeekSettled(self.pin, weekId, settled); });
+  };
+  SP.setDefaultPrice = function (cents) {
+    var self = this;
+    if (!validPrice(cents)) return Promise.reject(RpcError('PRICE_INVALID', 'PRICE_INVALID'));
+    return this._otherWrite(function () { self.state.default_price_cents = cents; },
+      function () { return self.client.setDefaultPrice(self.pin, cents); });
+  };
+  /** Re-sync whenever the page/PWA comes back to the foreground. Returns an unsubscribe fn. */
+  SP.attachVisibilitySync = function (doc) {
+    var self = this;
+    var h = function () { if (doc.visibilityState === 'visible') self.refresh().catch(function () {}); };
+    doc.addEventListener('visibilitychange', h);
+    return function () { doc.removeEventListener('visibilitychange', h); };
+  };
+
+  return Object.freeze({
+    MEMBERS: MEMBERS, DIRECTIONS: DIRECTIONS, UNIT: UNIT, DEFAULT_PRICE: DEFAULT_PRICE,
+    PIN_KEY: PIN_KEY, CACHE_KEY: CACHE_KEY,
+    isoWeekId: isoWeekId, weekDates: weekDates, shiftWeek: shiftWeek, currentWeekId: currentWeekId,
+    todayLocal: todayLocal, weekRangeLabel: weekRangeLabel, dayLabel: dayLabel, tripKey: tripKey,
+    formatCents: formatCents, normalizeTrip: normalizeTrip, togglePassenger: togglePassenger, setDriver: setDriver,
+    computeBalances: computeBalances, weekBalances: weekBalances, pendingBalances: pendingBalances,
+    pendingWeekIds: pendingWeekIds, isWeekSettled: isWeekSettled, tripsOfWeek: tripsOfWeek,
+    minimalTransfers: minimalTransfers, whatsappSummary: whatsappSummary,
+    classifyKey: classifyKey, buildHeaders: buildHeaders,
+    SupabaseClient: SupabaseClient, CarpoolStore: CarpoolStore,
+  });
+});
+</script>
+<script id="app">
+/* UI layer: rendering + events only. All money, dates, sync and caching live in CarpoolEngine. */
+(function () {
+  'use strict';
+  var SUPABASE_URL = 'https://gbtbsavxndpbnkqngmbz.supabase.co';
+  var SUPABASE_PUBLIC_KEY = 'sb_publishable__CJ6vqOKr-P0NGrbs2aoyA_1muAmd9r'; // public (publishable) key only
+  var LS_WEEKEND = 'uni_carpool_weekend_v1';
+
+  var E = window.CarpoolEngine, M = E.MEMBERS;
+  var DAY_LONG = ['Dilluns', 'Dimarts', 'Dimecres', 'Dijous', 'Divendres', 'Dissabte', 'Diumenge'];
+  var MONTHS = ['gen', 'febr', 'març', 'abr', 'maig', 'juny', 'jul', 'ag', 'set', 'oct', 'nov', 'des'];
+
+  function $(id) { return document.getElementById(id); }
+  function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* storage unavailable */ } }
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function eur(c, sign) { return (sign && c > 0 ? '+' : '') + E.formatCents(c).replace(/^-/, '−'); }
+  function dayMonth(ymd) { var p = ymd.split('-'); return (+p[2]) + ' ' + MONTHS[+p[1] - 1]; }
+  function parseEurToCents(input) {
+    var s = String(input == null ? '' : input).trim().replace(/\s|€/g, '');
+    if (!/^\d{1,4}([.,]\d{1,2})?$/.test(s)) return null;
+    var parts = s.replace('.', ',').split(',');
+    return parseInt(parts[0], 10) * 100 + (parts[1] ? parseInt((parts[1] + '0').slice(0, 2), 10) : 0);
+  }
+
+  var storage = null; try { storage = window.localStorage; } catch (e) { storage = null; }
+  var client = E.SupabaseClient({ url: SUPABASE_URL, key: SUPABASE_PUBLIC_KEY, fetch: window.__carpoolFetch });
+  var store = E.CarpoolStore({ client: client, storage: storage, onChange: function () { schedule(); } });
+
+  var ui = { weekId: E.currentWeekId(), tab: 'week', weekendOpen: {}, refreshing: false, weekBusy: false, wasLoggedIn: store.hasPin() };
+  try { ui.weekendOpen = JSON.parse(lsGet(LS_WEEKEND) || '{}') || {}; } catch (e) { ui.weekendOpen = {}; }
+
+  function trips() { return store.state.trips; }
+  function weeks() { return store.state.weeks; }
+  function settled(w) { return E.isWeekSettled(weeks(), w); }
+  function quiet(p) { if (p && p.catch) p.catch(function () { /* surfaced via store.status */ }); }
+
+  // ---------------- Render scheduling (one frame per burst of store events) ----------------
+  var raf = 0;
+  function schedule() {
+    if (raf) return;
+    raf = (window.requestAnimationFrame || setTimeout)(function () { raf = 0; onStoreChange(); });
+  }
+  function onStoreChange() {
+    if (!store.hasPin()) {
+      if (ui.wasLoggedIn) { ui.wasLoggedIn = false; closeAllSheets(); showPin('El PIN ja no és vàlid. Introdueix el PIN actual.'); }
+      return;
+    }
+    render(); renderSync();
+  }
+
+  // ---------------- Rendering ----------------
+  function svg(id, cls) { return '<svg class="i' + (cls ? ' ' + cls : '') + '" aria-hidden="true"><use href="#' + id + '"/></svg>'; }
+  function legMeta(t) {
+    var n = t.passengers.length, price = t.price_cents;
+    if (!n) return '';
+    if (!t.driver) return n + (n === 1 ? ' ocupant' : ' ocupants') + ' · sense conductor';
+    if (n === 1) return 'Només conductor · 0,00 €';
+    var each = Math.round(price / n);
+    return n + ' ocupants · ' + (price % n ? '≈' : '') + eur(each) + '/p';
+  }
+  function legHTML(ymd, dir) {
+    var t = store.getTrip(ymd, dir), label = dir === 'anada' ? 'Anada' : 'Tornada';
+    var pills = M.map(function (m) {
+      var on = t.passengers.indexOf(m) !== -1, drv = t.driver === m;
+      return '<button type="button" class="pill' + (drv ? ' is-driver' : '') + '" data-act="pax" data-m="' + m + '" aria-pressed="' + on + '"'
+        + ' aria-label="' + m + (drv ? ', condueix' : on ? ', hi va' : ', no hi va') + '">' + m + (drv ? svg('i-wheel', 'badge') : '') + '</button>';
+    }).join('');
+    var drivers = M.map(function (m) {
+      return '<button type="button" class="drv" role="radio" data-act="drv" data-m="' + m + '" aria-checked="' + (t.driver === m) + '" aria-label="Condueix ' + m + '">'
+        + svg('i-wheel') + '<span>' + m + '</span></button>';
+    }).join('');
+    return '<div class="leg" data-date="' + ymd + '" data-dir="' + dir + '">'
+      + '<div class="leg-h"><span class="dir">' + label + '</span><span class="meta num">' + esc(legMeta(t)) + '</span></div>'
+      + '<div class="grid5" role="group" aria-label="Ocupants ' + label + '">' + pills + '</div>'
+      + '<div class="drv-cap">Qui condueix</div>'
+      + '<div class="grid5" role="radiogroup" aria-label="Conductor ' + label + '">' + drivers + '</div>'
+      + '</div>';
+  }
+  function hasTrips(ymd) {
+    return E.DIRECTIONS.some(function (d) { return store.getTrip(ymd, d).passengers.length > 0; });
+  }
+  function renderDays() {
+    var dates = E.weekDates(ui.weekId), today = E.todayLocal();
+    var weekendHas = hasTrips(dates[5]) || hasTrips(dates[6]);
+    var showWeekend = weekendHas || !!ui.weekendOpen[ui.weekId];
+    var html = '';
+    dates.forEach(function (ymd, i) {
+      if (i >= 5 && !showWeekend) return;
+      var isToday = ymd === today;
+      html += '<section class="day' + (isToday ? ' is-today' : '') + '" id="d-' + ymd + '">'
+        + '<div class="day-h"><b>' + DAY_LONG[i] + '</b><time datetime="' + ymd + '">' + dayMonth(ymd) + '</time>'
+        + (isToday ? '<span class="today">Avui</span>' : '') + '</div>'
+        + legHTML(ymd, 'anada') + legHTML(ymd, 'tornada') + '</section>';
+    });
+    $('days').innerHTML = html;
+    var wb = $('weekendBtn');
+    wb.hidden = weekendHas;
+    wb.innerHTML = showWeekend ? svg('i-minus') + 'Amagar dissabte i diumenge' : svg('i-plus') + 'Afegir dissabte i diumenge';
+  }
+  function renderHeader() {
+    var w = ui.weekId;
+    var sub = w === E.currentWeekId() ? 'Aquesta setmana' : 'Setmana ' + parseInt(w.split('-W')[1], 10);
+    $('weekLabel').innerHTML = '<b class="num">' + esc(E.weekRangeLabel(w)) + '</b><span class="num">'
+      + (settled(w) ? '<span class="settled">Liquidada</span> · ' : '') + esc(sub) + '</span>';
+  }
+  function weekTransfers(w) { return E.minimalTransfers(E.weekBalances(trips(), w)); }
+  function totalTransfers() { return E.minimalTransfers(E.pendingBalances(trips(), weeks())); }
+  function sumCents(xs) { return xs.reduce(function (a, x) { return a + x.cents; }, 0); }
+  function nBizums(n) { return n + (n === 1 ? ' Bizum' : ' Bizums'); }
+  function renderBar() {
+    var wt = weekTransfers(ui.weekId), tt = totalTransfers();
+    $('sumWeek').innerHTML = settled(ui.weekId) ? 'Setmana: <b>liquidada</b>'
+      : wt.length ? 'Setmana: <b class="num">' + nBizums(wt.length) + ' · ' + eur(sumCents(wt)) + '</b>'
+      : 'Setmana: <b>tot quadra</b>';
+    $('sumTotal').innerHTML = 'Pendent total: <b class="num">' + (tt.length ? nBizums(tt.length) : 'cap') + '</b>';
+  }
+  function balanceList(bal) {
+    var max = 1;
+    M.forEach(function (m) { max = Math.max(max, Math.abs(bal[m])); });
+    return '<ul class="rows">' + M.map(function (m) {
+      var v = bal[m], w = Math.round(Math.abs(v) / max * 50);
+      var bar = v ? '<i class="' + (v < 0 ? 'neg' : '') + '" style="' + (v < 0 ? 'right:50%' : 'left:50%') + ';width:' + w + '%"></i>' : '';
+      return '<li><span class="ini">' + m + '</span><span class="balbar" aria-hidden="true">' + bar + '</span>'
+        + '<span class="amt num' + (v < 0 ? ' neg' : v === 0 ? ' zero' : '') + '">' + eur(v, true) + '</span></li>';
+    }).join('') + '</ul>';
+  }
+  function transferList(xs) {
+    if (!xs.length) return '<div class="empty">Cap Bizum pendent. Tot quadra.</div>';
+    return '<ul class="rows">' + xs.map(function (x) {
+      return '<li aria-label="' + x.from + ' paga ' + esc(eur(x.cents)) + ' a ' + x.to + '"><span class="xfer"><span class="ini">' + x.from + '</span>'
+        + svg('i-arrow') + '<span class="ini">' + x.to + '</span></span><span class="amt num">' + eur(x.cents) + '</span></li>';
+    }).join('') + '</ul>';
+  }
+  function renderSettle() {
+    if ($('settleSheet').hidden) return;
+    var isWeek = ui.tab === 'week';
+    $('tabWeek').setAttribute('aria-selected', String(isWeek));
+    $('tabTotal').setAttribute('aria-selected', String(!isWeek));
+    $('tabWeekSub').textContent = E.weekRangeLabel(ui.weekId);
+    var nW = E.pendingWeekIds(trips(), weeks()).length;
+    $('tabTotalSub').textContent = nW ? nW + (nW === 1 ? ' setmana oberta' : ' setmanes obertes') : 'Cap setmana oberta';
+    var bal = isWeek ? E.weekBalances(trips(), ui.weekId) : E.pendingBalances(trips(), weeks());
+    var html = '<div class="card"><div class="card-h">Bizums a fer</div>' + transferList(E.minimalTransfers(bal)) + '</div>'
+      + '<div class="card"><div class="card-h">Balanç net</div>' + balanceList(bal) + '</div>';
+    if (isWeek) {
+      var st = settled(ui.weekId);
+      html += '<button id="settleToggle" type="button" class="btn ' + (st ? '' : 'accent') + '"' + (ui.weekBusy ? ' disabled' : '') + '>'
+        + (st ? 'Desmarcar com a liquidada' : svg('i-check') + 'Marcar setmana com a liquidada') + '</button>'
+        + (st ? '<p class="note">Aquesta setmana ja no compta al total pendent.</p>' : '');
+    } else {
+      html += '<p class="note">Inclou totes les setmanes no marcades com a liquidades.</p>';
+    }
+    $('settleBody').innerHTML = html;
+  }
+  function render() { renderHeader(); renderDays(); renderBar(); renderSettle(); }
+
+  function renderSync() {
+    var b = $('syncBtn'), s, label;
+    if (store.status === 'error') { s = 'error'; label = 'Error de xarxa — Reintentar'; }
+    else if (store.status === 'syncing' || ui.refreshing) { s = 'busy'; label = 'Sincronitzant…'; }
+    else if (store.status === 'saved' || !store.fromCache) { s = 'ok'; label = 'Guardat'; }
+    else { s = 'idle'; label = 'Carregant…'; }
+    b.dataset.s = s; $('syncTxt').textContent = label; b.setAttribute('aria-label', label);
+  }
+
+  var toastTimer = null;
+  function toast(msg) {
+    var t = $('toast'); t.textContent = msg; t.hidden = false;
+    clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.hidden = true; }, 2200);
+  }
+
+  // ---------------- Network ----------------
+  function refresh(manual) {
+    if (!store.hasPin() || ui.refreshing) return;
+    ui.refreshing = true; renderSync();
+    store.refresh().then(function () { if (manual) toast('Actualitzat'); }, function (err) {
+      if (err && err.code === 'PIN_LOCKED') toast(pinErrorText(err));
+      else if (err && err.code !== 'PIN_INVALID' && manual) toast('Sense connexió. Mostrant les dades desades.');
+    }).then(function () { ui.refreshing = false; renderSync(); });
+  }
+  function retryAll() { quiet(store.retry()); refresh(false); }
+
+  // ---------------- Sheets ----------------
+  var SHEETS = ['settleSheet', 'settingsSheet', 'copySheet'], lastFocus = null;
+  function openSheet(id) {
+    lastFocus = document.activeElement;
+    $(id).hidden = false; document.body.style.overflow = 'hidden';
+    var c = $(id).querySelector('[data-close]'); if (c) c.focus();
+  }
+  function closeSheet(id) {
+    $(id).hidden = true;
+    if (SHEETS.every(function (s) { return $(s).hidden; })) document.body.style.overflow = '';
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+  function closeAllSheets() { SHEETS.forEach(function (s) { $(s).hidden = true; }); document.body.style.overflow = ''; }
+
+  // ---------------- Clipboard (with fallbacks for older mobile browsers) ----------------
+  function copyText(text) {
+    function legacy() {
+      var ta = document.createElement('textarea');
+      ta.value = text; ta.setAttribute('readonly', '');
+      ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;font-size:16px';
+      document.body.appendChild(ta); ta.focus(); ta.select();
+      try { ta.setSelectionRange(0, text.length); } catch (e) { /* older engines */ }
+      var ok = false; try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+      document.body.removeChild(ta);
+      return ok;
+    }
+    function manual() { $('copyText').value = text; openSheet('copySheet'); }
+    if (navigator.clipboard && navigator.clipboard.writeText && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(function () { toast('Resum copiat'); },
+        function () { if (legacy()) toast('Resum copiat'); else manual(); });
+    } else if (legacy()) toast('Resum copiat');
+    else manual();
+  }
+
+  // ---------------- PIN ----------------
+  function showPin(msg) {
+    $('app').hidden = true; $('pinScreen').hidden = false;
+    $('pinErr').textContent = msg || ''; $('pinInput').value = '';
+    setTimeout(function () { $('pinInput').focus(); }, 50);
+  }
+  function showApp() { $('pinScreen').hidden = true; $('app').hidden = false; render(); renderSync(); }
+  function pinErrorText(err) {
+    var code = err && err.code;
+    if (code === 'PIN_INVALID') return 'PIN incorrecte.';
+    if (code === 'PIN_LOCKED') {
+      var min = err.retryAfterS > 0 ? Math.ceil(err.retryAfterS / 60) : 0;
+      return 'Massa intents. Torna-ho a provar ' + (min ? 'd\u2019aquí a ' + min + ' min.' : 'més tard.');
+    }
+    if (code === 'NETWORK') return 'Sense connexió. Comprova la xarxa i torna-ho a provar.';
+    return 'No s\u2019ha pogut comprovar el PIN. Torna-ho a provar.';
+  }
+  var pinBusy = false;
+  function submitPin(e) {
+    if (e) e.preventDefault();
+    if (pinBusy) return;
+    var pin = $('pinInput').value.replace(/\D/g, '');
+    if (pin.length !== 4) { $('pinErr').textContent = 'El PIN té 4 xifres.'; return; }
+    pinBusy = true;
+    var btn = $('pinBtn'); btn.disabled = true; btn.textContent = 'Comprovant…'; $('pinErr').textContent = '';
+    store.login(pin).then(function () {
+      ui.wasLoggedIn = true; showApp(); scrollToToday();
+    }, function (err) {
+      $('pinInput').value = '';
+      $('pinErr').textContent = pinErrorText(err);
+      $('pinInput').focus();
+    }).then(function () { pinBusy = false; btn.disabled = false; btn.textContent = 'Entrar'; });
+  }
+  function scrollToToday() {
+    var today = E.todayLocal(), el = document.getElementById('d-' + today);
+    if (el && E.weekDates(ui.weekId)[0] !== today) window.scrollTo(0, Math.max(0, el.getBoundingClientRect().top + window.pageYOffset - 124));
+  }
+
+  // ---------------- Events ----------------
+  $('pinForm').addEventListener('submit', submitPin);
+  $('pinInput').addEventListener('input', function () {
+    var v = this.value.replace(/\D/g, '').slice(0, 4);
+    if (v !== this.value) this.value = v;
+    $('pinErr').textContent = '';
+    if (v.length === 4) submitPin();
+  });
+  $('days').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-act]'); if (!b) return;
+    var leg = b.closest('.leg'), m = b.dataset.m;
+    if (!leg || M.indexOf(m) === -1) return;
+    quiet(b.dataset.act === 'pax' ? store.togglePassenger(leg.dataset.date, leg.dataset.dir, m)
+      : store.setDriver(leg.dataset.date, leg.dataset.dir, m));
+    onStoreChange(); // paint synchronously: feedback must land on the same frame as the tap
+  });
+  function goWeek(w) { ui.weekId = w; render(); window.scrollTo(0, 0); }
+  $('prevWeek').addEventListener('click', function () { goWeek(E.shiftWeek(ui.weekId, -1)); });
+  $('nextWeek').addEventListener('click', function () { goWeek(E.shiftWeek(ui.weekId, 1)); });
+  $('weekLabel').addEventListener('click', function () { goWeek(E.currentWeekId()); scrollToToday(); });
+  $('weekendBtn').addEventListener('click', function () {
+    if (ui.weekendOpen[ui.weekId]) delete ui.weekendOpen[ui.weekId]; else ui.weekendOpen[ui.weekId] = true;
+    lsSet(LS_WEEKEND, JSON.stringify(ui.weekendOpen)); renderDays();
+  });
+  $('refreshBtn').addEventListener('click', function () { refresh(true); });
+  $('syncBtn').addEventListener('click', function () { if (store.status === 'error') retryAll(); else refresh(true); });
+  $('settingsBtn').addEventListener('click', function () {
+    $('priceInput').value = E.formatCents(store.state.default_price_cents).replace(' €', '');
+    openSheet('settingsSheet');
+  });
+  $('openSettle').addEventListener('click', function () { openSheet('settleSheet'); renderSettle(); });
+  $('tabWeek').addEventListener('click', function () { ui.tab = 'week'; renderSettle(); });
+  $('tabTotal').addEventListener('click', function () { ui.tab = 'total'; renderSettle(); });
+  $('settleBody').addEventListener('click', function (e) {
+    if (!e.target.closest('#settleToggle') || ui.weekBusy) return;
+    var w = ui.weekId, next = !settled(w);
+    ui.weekBusy = true;
+    store.setWeekSettled(w, next).then(function () {
+      toast(next ? 'Setmana marcada com a liquidada' : 'Setmana desmarcada');
+    }, function (err) {
+      if (!err || err.code !== 'PIN_INVALID') toast('No s’ha pogut desar. Torna-ho a provar.');
+    }).then(function () { ui.weekBusy = false; render(); });
+    renderSettle();
+  });
+  $('copyBtn').addEventListener('click', function () { copyText(E.whatsappSummary(trips(), ui.weekId, weeks())); });
+  document.querySelectorAll('.scrim').forEach(function (sc) {
+    sc.addEventListener('click', function (e) { if (e.target === sc || e.target.closest('[data-close]')) closeSheet(sc.id); });
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    SHEETS.slice().reverse().some(function (s) { if (!$(s).hidden) { closeSheet(s); return true; } return false; });
+  });
+  $('priceForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var cents = parseEurToCents($('priceInput').value);
+    if (cents === null || cents <= 0 || cents > 100000) { toast('Import no vàlid. Exemple: 6,00'); return; }
+    store.setDefaultPrice(cents).then(function () { toast('Tarifa desada: ' + eur(cents)); closeSheet('settingsSheet'); },
+      function (err) { if (!err || err.code !== 'PIN_INVALID') toast('No s’ha pogut desar la tarifa.'); });
+  });
+  $('logoutBtn').addEventListener('click', function () { ui.wasLoggedIn = false; closeAllSheets(); store.logout(); showPin(''); });
+  store.attachVisibilitySync(document);
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && store.status === 'error') quiet(store.retry()); });
+  window.addEventListener('online', function () { if (store.hasPin()) retryAll(); });
+
+  // ---------------- Boot: cached state renders instantly, network refresh follows ----------------
+  if (!store.hasPin()) showPin('');
+  else { showApp(); scrollToToday(); refresh(false); }
+})();
+</script>
+</body>
+</html>
