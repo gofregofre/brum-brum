@@ -57,3 +57,9 @@ Decisió de l'usuari: "Sí, prepara la migració" (targeta, 16:09) i "Amb tres i
 - Canvi de contracte: `set_default_price` retorna `jsonb` en lloc d'`integer` (cal per retornar l'error). El motor no en fa servir el valor.
 - Motor: nou codi `PIN_LOCKED` (amb `retryAfterS`), i un cos `PIN_INVALID/PIN_LOCKED` es tracta com a error encara que arribi amb HTTP 200 (defensa en profunditat). Un `PIN_LOCKED` no fa logout.
 - Tests: SQL **30/30** (inclou: persistència entre transaccions, IP bloquejada rebutja fins i tot el PIN correcte, cap escriptura amb PIN fals, caducitat, capçaleres absents/brossa, límit global, `anon` no pot llegir `pin_attempts` ni executar `_pin_gate`, PIN nul/100.000 caràcters, migració re-executable). 4 mutants SQL (RAISE en lloc de RETURN, sense comprovació de bloqueig, límit 5, sense REVOKE) → tots detectats. Rollback provat (torna l'`integer` i el RAISE original). Motor JS: **49/49**.
+
+### 5.1 Aplicació (registre)
+- 16:14 l'usuari aprova aplicar-la (targeta "Sí, aplica-la").
+- Pre-check en viu OK: `pin_attempts` no existia, `_check_pin` sense canvis, `set_default_price` retornava `integer`.
+- Incidència 1 (error meu): vaig enviar al dispositiu una versió amb comentaris condensats però amb el hash del fitxer del repo → no quadrava i **no s'aplicà** (correcte). Text exacte enviat reconstruït: `20261126_pin_rate_limit.applied-copy.sql`, sha256 `9a9a7b763748f93468abde90f2eea25a55b8b483c0bed8b2b81882762e569423`, idèntic en codi al revisat (només canvien comentaris); suite SQL re-executada sobre aquest text: 30/30.
+- Incidència 2: el mode automàtic de Claude Code a l'ordinador de l'usuari bloqueja `apply_migration` en BD de producció. No s'ha intentat cap via alternativa. Pendent que l'usuari l'executi al SQL Editor.
