@@ -377,9 +377,18 @@
         return res.text().then(function (txt) {
           var data = null;
           try { data = txt ? JSON.parse(txt) : null; } catch (e) { data = txt; }
-          if (res.ok) return data;
-          var msg = data && typeof data === 'object' ? [data.message, data.details, data.hint].filter(Boolean).join(' ') : String(data);
-          if (/PIN_INVALID/.test(msg)) throw RpcError('PIN_INVALID', 'PIN_INVALID', res.status);
+          var isObj = data && typeof data === 'object' && !Array.isArray(data);
+          var pinErr = isObj && (data.message === 'PIN_INVALID' || data.message === 'PIN_LOCKED') ? data.message : null;
+          // Error bodies are honoured even with HTTP 200 (defence in depth: the server sets the
+          // status through the response.status GUC so that failed attempts are committed).
+          if (res.ok && !pinErr) return data;
+          var msg = isObj ? [data.message, data.details, data.hint].filter(Boolean).join(' ') : String(data);
+          if (pinErr === 'PIN_LOCKED' || /PIN_LOCKED/.test(msg)) {
+            var e = RpcError('PIN_LOCKED', 'PIN_LOCKED', res.status);
+            e.retryAfterS = isObj && Number.isSafeInteger(data.retry_after_s) ? data.retry_after_s : null;
+            throw e;
+          }
+          if (pinErr === 'PIN_INVALID' || /PIN_INVALID/.test(msg)) throw RpcError('PIN_INVALID', 'PIN_INVALID', res.status);
           throw RpcError('HTTP_' + res.status, msg, res.status);
         });
       }, function (err) {

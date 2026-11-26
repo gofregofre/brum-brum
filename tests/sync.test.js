@@ -163,3 +163,25 @@ test('onChange throwing does not break sync', async () => {
   const p = s.setDriver('2026-11-23', 'anada', 'A'); fc.queue.shift().d.r({}); await p;
   assert.equal(s.status, 'saved');
 });
+
+// ---- PIN attempt limit (migration 20261126_pin_rate_limit) ----
+test('rpc: 429 PIN_LOCKED mapped with retryAfterS', async () => {
+  const c = E.SupabaseClient({ url: URL, key: PUB, fetch: () => res(429, { code: 'P0001', message: 'PIN_LOCKED', retry_after_s: 812 }) });
+  await assert.rejects(c.getState('4321'), e => e.code === 'PIN_LOCKED' && e.retryAfterS === 812 && e.status === 429);
+});
+test('rpc: error body with HTTP 200 is still an error (defence if status GUC is ignored)', async () => {
+  for (const m of ['PIN_INVALID', 'PIN_LOCKED']) {
+    const c = E.SupabaseClient({ url: URL, key: PUB, fetch: () => res(200, { code: 'P0001', message: m }) });
+    await assert.rejects(c.getState('0000'), e => e.code === m);
+  }
+  const ok = E.SupabaseClient({ url: URL, key: PUB, fetch: () => res(200, { trips: [], weeks: [], default_price_cents: 600 }) });
+  assert.equal((await ok.getState('1')).default_price_cents, 600);
+});
+test('store: PIN_LOCKED on refresh does NOT log out; on login does not store PIN', async () => {
+  const fc = fakeClient(); const st = memStorage({ [E.PIN_KEY]: '1111' }); const s = E.CarpoolStore({ client: fc, storage: st });
+  const r = s.refresh(); fc.queue.shift().d.j(Object.assign(new Error('PIN_LOCKED'), { code: 'PIN_LOCKED', retryAfterS: 60 }));
+  await assert.rejects(r); assert.equal(st.getItem(E.PIN_KEY), '1111'); assert.equal(s.status, 'error');
+  s.logout();
+  const p = s.login('2222'); fc.queue.shift().d.j(Object.assign(new Error('PIN_LOCKED'), { code: 'PIN_LOCKED' }));
+  await assert.rejects(p, e => e.code === 'PIN_LOCKED'); assert.equal(st.getItem(E.PIN_KEY), null);
+});

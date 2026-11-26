@@ -45,3 +45,15 @@ Inicialment fora del repo (el prompt demanava esborrar-los); **2026-11-26 16:09 
 - El PIN de 4 dígits (10.000 combinacions) no té limitació d'intents a `_check_pin` (segons el cos inspeccionat): un atacant amb la clau pública el pot forçar. Recomanat: taula de rate-limit a `_check_pin`.
 - Les RPC són `EXECUTE` per a `PUBLIC`; acceptable perquè totes validen PIN.
 - `upsert_trip` confia en el client per a `week_id`/`price_cents`; la BD no valida coherència.
+
+## 5. Límit d'intents de PIN (2026-11-26, **preparat, NO aplicat**)
+Decisió de l'usuari: "Sí, prepara la migració" (targeta, 16:09) i "Amb tres intents ja n'hi ha prou" (16:11). Aplicar només amb la seva confirmació.
+
+- Fitxers: `supabase/migrations/20261126_pin_rate_limit.sql`, `…rollback.sql`, tests a `supabase/tests/` (`./supabase/tests/run.sh`).
+- Definicions de partida llegides en viu (només lectura, `pg_get_functiondef`), PostgreSQL 17.12. Rèplica local a `tests/00_baseline_schema.sql` amb PIN fals `4321`.
+- **Trampa evitada:** `_check_pin` fa `RAISE`; PostgREST fa ROLLBACK en un RAISE, per tant un comptador escrit abans es perdria. Les RPC ara **retornen** el cos d'error i fixen `response.status` (400 / 429) perquè la transacció faci COMMIT. Nota: que PostgREST faci COMMIT amb un 4xx fixat per GUC és una **inferència** de la documentació ("If the transaction doesn't fail, it will always end in a COMMIT"), no una frase explícita → es verifica en viu després d'aplicar (3 PINs falsos → el 4t ha de donar 429).
+- Política: per IP (`cf-connecting-ip` → `x-real-ip` → 1a de `x-forwarded-for`) 3 errors / 15 min → bloqueig 15 min; global 30 errors / 60 min → bloqueig 30 min per a tothom. Un PIN correcte esborra el comptador d'aquella IP.
+- Trade-off: el límit global permet a un atacant bloquejar el grup 30 min (DoS) però impedeix rotar IPs. La solució de fons és un PIN més llarg (6+ dígits).
+- Canvi de contracte: `set_default_price` retorna `jsonb` en lloc d'`integer` (cal per retornar l'error). El motor no en fa servir el valor.
+- Motor: nou codi `PIN_LOCKED` (amb `retryAfterS`), i un cos `PIN_INVALID/PIN_LOCKED` es tracta com a error encara que arribi amb HTTP 200 (defensa en profunditat). Un `PIN_LOCKED` no fa logout.
+- Tests: SQL **30/30** (inclou: persistència entre transaccions, IP bloquejada rebutja fins i tot el PIN correcte, cap escriptura amb PIN fals, caducitat, capçaleres absents/brossa, límit global, `anon` no pot llegir `pin_attempts` ni executar `_pin_gate`, PIN nul/100.000 caràcters, migració re-executable). 4 mutants SQL (RAISE en lloc de RETURN, sense comprovació de bloqueig, límit 5, sense REVOKE) → tots detectats. Rollback provat (torna l'`integer` i el RAISE original). Motor JS: **49/49**.
