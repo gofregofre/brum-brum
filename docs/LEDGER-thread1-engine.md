@@ -33,7 +33,7 @@ Observació: la clau publishable **amb** `Bearer` també ha estat acceptada (400
 8. `localStorage` embolcallat amb try/catch (mode privat / quota) i cache corrupta tolerada.
 
 ## 3. Tests (TDD)
-Scripts temporals **no comitejats** (per instrucció); còpia per auditoria a la carpeta del projecte `thread1-engine/` (`engine.test.js`, `sync.test.js`, `live.js`). Executar: `node --test engine.test.js sync.test.js`.
+Inicialment fora del repo (el prompt demanava esborrar-los); **2026-11-26 16:09 l'usuari accepta mantenir-los per auditoria** → ara a `tests/`. Executar: `node --test tests/engine.test.js tests/sync.test.js`. Prova en viu: `SB_PUBLISHABLE_KEY=... SB_ANON_JWT=... NODE_USE_ENV_PROXY=1 node tests/live.js` (només PINs falsos).
 
 - Resultat: **46/46 passen** (30 motor + 16 sincronització).
 - Casos obligatoris: a) conductor sol 0,00 €; b) anada 4 (J) + tornada 2 (A) → `A+1,50 J+4,50 M−1,50 Q−1,50 R−3,00`; c) 700/3 suma 0; d) cercle A→J→M→A → 0 Bizums; e) setmanes `settled` excloses.
